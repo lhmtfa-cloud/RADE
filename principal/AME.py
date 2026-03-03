@@ -1,134 +1,165 @@
-import os
-import json
-import random
-from extrator import extrair_texto
-from matriz_1_input import extrair_conceitos
-from matriz_2_thought import localizar_inicios
-from matriz_3_knowledge import treinar_conhecimento, gerar_pensamento
-from matriz_4_consensus import atingir_consenso
-from matriz_5_output import traduzir_para_humano
+import fitz
+import re
+from tqdm import tqdm
+import ctranslate2
+from transformers import AutoTokenizer
+import time
 
-# =============================================================================
-# GERENCIADOR DA MATRIZ DE MEMÓRIA (JSON)
-# =============================================================================
+# ==========================================
+# CONFIGURAÇÕES E INICIALIZAÇÃO
+# ==========================================
+# Substitua pelos caminhos reais do seu ambiente
+TOKENIZER_PATH = r"model_ptt5"
+MODEL_PATH = r"model_ptt5_ct2"
 
-ARQUIVO_MEMORIA = "memoria_aprendizado.json"
+BATCH_SIZE = 4
+MAX_TOKENS_MODELO = 512
+num_threads = 4
 
-def carregar_memoria() -> dict:
-    """Carrega o JSON e converte as chaves de string de volta para tuplas."""
-    if not os.path.exists(ARQUIVO_MEMORIA):
-        return {}
-        
-    with open(ARQUIVO_MEMORIA, 'r', encoding='utf-8') as f:
-        memoria_json = json.load(f)
-        
-    memoria = {}
-    for q_key, states in memoria_json.items():
-        q_tokens = tuple(q_key.split("|"))
-        memoria[q_tokens] = {}
-        for s_key, score in states.items():
-            s_tokens = tuple(s_key.split("|"))
-            memoria[q_tokens][s_tokens] = score
-            
-    return memoria
+# Inicialização (descomente para executar)
+tokenizer = AutoTokenizer.from_pretrained(TOKENIZER_PATH, legacy=False)
+translator = ctranslate2.Translator(MODEL_PATH, device="cpu", inter_threads=num_threads)
 
-def salvar_memoria(memoria: dict):
-    """Converte as tuplas em strings separadas por '|' e salva no JSON."""
-    memoria_json = {}
-    for q_tokens, states in memoria.items():
-        q_key = "|".join(q_tokens)
-        memoria_json[q_key] = {}
-        for state_tokens, score in states.items():
-            s_key = "|".join(state_tokens)
-            memoria_json[q_key][s_key] = score
-            
-    with open(ARQUIVO_MEMORIA, 'w', encoding='utf-8') as f:
-        json.dump(memoria_json, f, ensure_ascii=False, indent=4)
-
-# =============================================================================
-# LOOP DE TREINAMENTO FOCADO
-# =============================================================================
-
-def loop_de_treino(pergunta: str, texto_puro: str, transitions: dict, memoria: dict, amostras_por_ponto: int = 15):
-    tokens = extrair_conceitos(pergunta)
-    chave_memoria = tuple(sorted(tokens))
-    print(f"\n[Matriz 1] Palavras associadas à pergunta: {tokens}")
+# ==========================================
+# FUNÇÕES DE PRÉ-PROCESSAMENTO
+# ==========================================
+def limpar_ruido_pdf(texto):
+    """Remove links, rodapés e cabeçalhos padronizados."""
+    texto = re.sub(r'https?://\S+|www\.\S+', '', texto)
+    texto = re.sub(r'piweb/validarDocumento.*|código: [a-f0-9]+', '', texto, flags=re.IGNORECASE)
     
-    # 1. LOOP DA MESMA PERGUNTA
-    while True:
-        start_states = localizar_inicios(tokens, texto_puro, memoria)
-        if not start_states:
-            print("Não há pontos válidos para explorar nesta pergunta.")
-            break
-            
-        top_states = start_states[:5]
-        
-        divergent_thoughts = []
-        for state in top_states:
-            for _ in range(amostras_por_ponto):
-                thought = gerar_pensamento(state, transitions)
-                divergent_thoughts.append(thought)
-                
-        best_thought = atingir_consenso(divergent_thoughts)
-        
-        # 2. MOSTRA AS PALAVRAS DE ASSOCIAÇÃO DO CONHECIMENTO
-        winning_start_state = tuple(best_thought[:2])
-        final_answer = traduzir_para_humano(best_thought)
-        
-        print("\n" + "="*60)
-        print(f"🎯 PONTO DE PARTIDA ESCOLHIDO PELA IA: {winning_start_state}")
-        print(f"🤖 RESPOSTA GERADA:\n{final_answer}")
-        print("="*60)
-        
-        # 3. SISTEMA DE NOTAS E NAVEGAÇÃO
-        print("\nComo você avalia essa associação?")
-        print("[ s ] Positivo (A IA foi no lugar certo)")
-        print("[ n ] Negativo (A IA pegou o contexto errado)")
-        print("[ p ] Pular  (Deixar a IA tentar de novo sem dar nota)")
-        print("[ q ] Sair   (Mudar de pergunta)")
-        
-        feedback = input("Sua escolha: ").strip().lower()
-        
-        if chave_memoria not in memoria:
-            memoria[chave_memoria] = {}
-            
-        if feedback == 's':
-            memoria[chave_memoria][winning_start_state] = memoria[chave_memoria].get(winning_start_state, 0) + 1
-            print(f"✅ Aprendizado salvo! O peso da associação {winning_start_state} AUMENTOU.")
-            salvar_memoria(memoria)
-            
-        elif feedback == 'n':
-            # Penaliza pesadamente para forçar a IA a fugir dessa resposta imediatamente
-            memoria[chave_memoria][winning_start_state] = memoria[chave_memoria].get(winning_start_state, 0) - 5
-            print(f"❌ Aprendizado salvo! A IA vai EVITAR a associação {winning_start_state}.")
-            salvar_memoria(memoria)
-            
-        elif feedback == 'q':
-            print("Saindo do loop desta pergunta...")
-            break
-            
-        else:
-            print("⏭️ Avaliação pulada. Tentando nova iteração...")
+    padroes_remover = [
+        r'ESTADO DO PARANÁ.*?Folha \d+',
+        r'Protocolo: \d{2}\.\d{3}\.\d{3}-\d+',
+        r'Órgão Cadastro:.*?\d{2}/\d{2}/\d{4}.*?\d{2}:\d{2}',
+        r'Para informações acesse:.*',
+        r'Código TTD:.*',
+        r'Palavras-chave:.*',
+        r'Assunto:.*',
+        r'Detalhamento:.*'
+    ]
+    
+    for padrao in padroes_remover:
+        texto = re.sub(padrao, '', texto, flags=re.IGNORECASE | re.DOTALL)
+    
+    texto = re.sub(r'\s+', ' ', texto).strip()
+    return texto
 
-# =============================================================================
-# INICIALIZAÇÃO
-# =============================================================================
+def extrair_texto_pdf(caminho_pdf):
+    """Lê o PDF e aplica a limpeza de ruído."""
+    doc = fitz.open(caminho_pdf)
+    texto = ""
+    for pagina in doc:
+        texto_pagina = pagina.get_text("text")
+        texto += limpar_ruido_pdf(texto_pagina) + " "
+    return texto
+
+def dividir_em_blocos(texto, max_palavras=350):
+    """Divide o texto em blocos menores para não estourar o limite de tokens."""
+    palavras = texto.split()
+    blocos = [" ".join(palavras[i:i + max_palavras]) for i in range(0, len(palavras), max_palavras)]
+    return blocos if blocos else [""]
+
+# ==========================================
+# FUNÇÕES DO MODELO (LLM)
+# ==========================================
+def processar_lotes(textos, max_decoding_length, desc_barra, usar_beam=False):
+    """Envia os blocos de texto para o modelo gerar o resumo."""
+    resultados_finais = []
+    
+    for i in tqdm(range(0, len(textos), BATCH_SIZE), desc=desc_barra, unit="lote"):
+        lote_textos = textos[i:i+BATCH_SIZE]
+        lote_tokens = [tokenizer.convert_ids_to_tokens(tokenizer.encode(t, add_special_tokens=True)) for t in lote_textos]
+        
+        resultados = translator.translate_batch(
+            lote_tokens, 
+            max_decoding_length=max_decoding_length,
+            min_decoding_length=15,
+            beam_size=2 if usar_beam else 1,
+            repetition_penalty=1.2,
+            no_repeat_ngram_size=3,
+            replace_unknowns=True
+        )
+        
+        for r in resultados:
+            texto_decodificado = tokenizer.decode(tokenizer.convert_tokens_to_ids(r.hypotheses[0]), skip_special_tokens=True)
+            texto_limpo = texto_decodificado.replace("summarize:", "").replace("Resumo:", "").strip()
+            resultados_finais.append(texto_limpo)
+            
+    return resultados_finais
+
+# ==========================================
+# FUNÇÕES DE EXTRAÇÃO E ESTRUTURAÇÃO
+# ==========================================
+def extrair_metadados_protocolo(texto):
+    """Extrai quem enviou, para quem e o assunto base usando RegEx."""
+    metadados = {
+        "Para": "Não identificado",
+        "De": "Não identificado",
+        "Assunto_Base": "Não identificado"
+    }
+    
+    match_para = re.search(r'(?i)Para:\s*(.*?)(?=\n|De:|Assunto|Documento)', texto)
+    if match_para: metadados["Para"] = match_para.group(1).strip()
+        
+    match_de = re.search(r'(?i)De:\s*(.*?)(?=\n|Para|Assunto)', texto)
+    if not match_de:
+        match_de = re.search(r'(?i)Memo.*?/(.*?)(?=\s|\n)', texto)
+    if match_de: metadados["De"] = match_de.group(1).strip()
+        
+    match_assunto = re.search(r'(?i)(?:Assunto|Documento):\s*(.*?)(?=\n)', texto)
+    if match_assunto: metadados["Assunto_Base"] = match_assunto.group(1).strip()
+        
+    return metadados
+
+def resumir_pdf_estruturado(caminho_pdf):
+    """Função principal que integra extração de dados e resumo do motivo."""
+    texto_completo = extrair_texto_pdf(caminho_pdf)
+    if not texto_completo.strip(): return "Erro: PDF vazio."
+
+    # 1. Extração via código (rápido e preciso)
+    metadados = extrair_metadados_protocolo(texto_completo)
+
+    # 2. Resumo via IA (apenas na introdução do documento)
+    blocos = dividir_em_blocos(texto_completo)
+    bloco_principal = blocos[0]
+    
+    prompt = f"Resuma o objetivo deste documento de forma direta: {bloco_principal}"
+    
+    resumo_motivo = processar_lotes(
+        [prompt], 
+        max_decoding_length=150, 
+        desc_barra="Analisando Motivo", 
+        usar_beam=True
+    )[0]
+
+    # 3. Formatação
+    resultado_estruturado = (
+        f"**DE:** {metadados['De']}\n"
+        f"**PARA:** {metadados['Para']}\n"
+        f"**REFERÊNCIA:** {metadados['Assunto_Base']}\n"
+        f"**RESUMO:** {resumo_motivo}"
+    )
+    
+    return resultado_estruturado
+
+# Exemplo de uso:
+# print(resumir_pdf_estruturado("seu_arquivo.pdf"))
+
+
 if __name__ == "__main__":
-    pdf_file = r"C:\Users\rafael.goncalves\Documents\GitHub\RafaelAugustoDocumentoExtrator RADE\principal\documento_teste.pdf"
+    arquivo_teste = r"principal\documento_teste.pdf" 
+    tempo_inicio = time.time()
     
-    texto_puro = extrair_texto(pdf_file)
-    print("Treinando Matriz de Conhecimento Base...")
-    transicoes_conhecimento = treinar_conhecimento(texto_puro)
-    print(f"Treinamento concluído. {len(transicoes_conhecimento)} estados mapeados na RAM.")
-    
-    # Carrega a "Matriz 3" (Memória Humana) do disco
-    memoria_aprendizado = carregar_memoria()
-    print(f"Memória de Aprendizado (JSON) carregada com {len(memoria_aprendizado)} tópicos conhecidos.")
-    
-    print("\n--- INICIANDO MODO DE TREINAMENTO RLHF ---")
-    while True:
-        pergunta_usuario = input("\nDigite a pergunta para treinar a IA (ou 'sair' para encerrar): ")
-        if pergunta_usuario.lower() == 'sair':
-            break
-            
-        loop_de_treino(pergunta_usuario, texto_puro, transicoes_conhecimento, memoria_aprendizado)
+    try:
+        resultado_final = resumir_pdf_estruturado(arquivo_teste)
+        print("\n" + "="*50)
+        print("RESUMO FINAL:")
+        print("="*50)
+        print(resultado_final)
+    except Exception as e:
+        print(f"Ocorreu um erro: {e}")
+    finally:
+        print("\n" + "-"*50)
+        print(f"Processo concluído em {time.time() - tempo_inicio:.2f} segundos.")
+        print("-"*50)
