@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>REDE</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+
+  <div class="container">
+    <div class="header-nav">
+      <div class="header-nav-left">
+        <span id="welcome-message"></span>
+      </div>
+      <div class="header-nav-right">
+        <a id="admin-link" href="/admin" class="nav-link" style="display: none;">
+            <i class="fas fa-shield-alt"></i> Admin
+        </a>
+        <button id="settings-btn" class="nav-button" title="Configurações">
+            <i class="fas fa-cog"></i>
+        </button>
+        <button id="logout-button" class="nav-button" title="Sair">
+            <i class="fas fa-sign-out-alt"></i>
+        </button>
+      </div>
+    </div>
+    
+    <div style="text-align: center; margin-bottom: 1.5rem;">
+        <h1>Processador de PDFs</h1>
+        <p style="color: var(--input-text); font-size: 0.95rem;">Faça o upload do seu documento para iniciar o processamento.</p>
+    </div>
+
+    <input type="file" id="pdfInput" accept="application/pdf" />
+    <label for="pdfInput" class="custom-file-upload">
+      <i class="fas fa-cloud-upload-alt fa-2x"></i> 
+      <span>Escolher Arquivo PDF</span>
+    </label>
+
+    <button onclick="uploadPDF()">Processar Arquivo</button>
+    <button id="cancel-button" class="hidden" style="background-color: var(--danger-color); margin-top: 0.5rem;">Cancelar Processamento</button>
+
+    <div class="progress-container hidden" id="progressSection">
+      <h3 style="font-size: 1rem; margin-bottom: 10px;">Status de Processamento</h3>
+      <progress id="progressBar" value="0" max="100"></progress>
+      <div id="statusText">Aguardando...</div>
+    </div>
+
+    <div id="downloadContainer" class="hidden">
+      <a id="downloadLink" href="#" download>
+          <i class="fas fa-download" style="margin-right: 8px;"></i> Baixar Resultado
+      </a>
+    </div>
+
+    <section id="history-section" style="margin-top: 3rem; width: 100%;">
+        <h2><i class="fas fa-history" style="margin-right: 8px;"></i> Meu Histórico</h2>
+        <div class="table-container" style="max-height: 350px;">
+            <table id="history-table">
+                <thead>
+                    <tr>
+                        <th>Arquivo</th>
+                        <th>Data</th>
+                        <th>Status</th>
+                        <th>Ação</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </section>
+  </div>
+
+  <div id="settings-modal">
+    <div class="modal-content">
+      <span class="close-btn">&times;</span>
+      <h2>Configurações</h2>
+      <form id="password-change-form">
+        <div class="form-group">
+          <label for="current-password">Palavra-passe Atual</label>
+          <input type="password" id="current-password" required>
+        </div>
+        <div class="form-group">
+          <label for="new-password">Nova Palavra-passe</label>
+          <input type="password" id="new-password" required>
+        </div>
+        <button type="submit" style="width: 100%; max-width: 100%;">Guardar Alterações</button>
+        <p id="password-change-status" class="error-text" style="margin-top: 5px;"></p>
+      </form>
+      
+      <div style="height: 1px; background-color: var(--border-color); margin: 1.5rem 0;"></div>
+      
+      <div class="settings-row">
+        <span style="font-weight: 500;"><i class="fas fa-moon"></i> Modo Escuro</span>
+        <label class="switch">
+          <input type="checkbox" id="dark-mode-toggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+        <p>Feito por Rafael</p>
+  </footer>
+  
+  <script src="/static/REDE.js"></script>
+</body>
+</html>

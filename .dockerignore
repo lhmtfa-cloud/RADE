@@ -1,0 +1,32 @@
+# Ignora absolutamente tudo que começa com ponto
+.*
+# Exceto o próprio .dockerignore (opcional)
+!.dockerignore
+
+# Ignora todas as pastas de ambiente e cache
+**/venv/
+**/.venv/
+**/env/
+**/__pycache__/
+**/.pytest_cache/
+**/.ipynb_checkpoints/
+
+# Ignora arquivos de sistema e logs
+**/*.log
+**/*.pyc
+**/*.pyo
+**/*.pyd
+.db
+.sqlite3
+
+# Ignora pastas de bibliotecas ou dados que sobraram
+phiC/
+app/models
+
+
+# Ignora arquivos compactados
+*.zip
+*.tar.gz
+*.tar
+*.rar
+*.7z

@@ -1,0 +1,18 @@
+-https://github.com/UB-Mannheim/tesseract/wiki
+C:\Users\rafael.goncalves\AppData\Local\Programs\Tesseract-OCR
+
+
+
+-https://github.com/oschwartz10612/poppler-windows/releases
+C:\Users\rafael.goncalves\AppData\Local\Programs\poppler
+
+
+
+
+uvicorn main:app --host 0.0.0.0 --port 8000
+
+
+
+docker build -t bobia-app .
+docker compose down 
+docker compose up -d
