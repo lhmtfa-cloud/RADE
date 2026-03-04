@@ -31,6 +31,7 @@ def localizar_paginas_referencia(caminho_pdf, resumo_ia):
             
     return ", ".join(paginas_encontradas) if paginas_encontradas else "Não identificada"
 
+
 def gerar_resumo_phi(texto_limpo):
     prompt = (
         f"<|user|>\n"
@@ -117,7 +118,6 @@ def avaliar_e_justificar_ocr(resumo_original, dados_extras):
     
     output = tokenizer.decode(results[0].sequences_ids[0], skip_special_tokens=True)
     return output.strip()
-
 def processar_documento_final(caminho_pdf):
     texto_bruto = extrair_texto_bruto_pdf(caminho_pdf)
     if not texto_bruto.strip(): return "Erro: PDF sem texto.", ""
@@ -125,7 +125,6 @@ def processar_documento_final(caminho_pdf):
     meta = extrair_metadados_protocolo(texto_bruto)
     corpo_limpo = limpar_texto_para_ia(texto_bruto)
     
-    # 1. Extração paralela para otimizar tempo (Resumo IA, OCR e Tabelas)
     with concurrent.futures.ThreadPoolExecutor() as executor:
         future_resumo = executor.submit(gerar_resumo_phi, corpo_limpo)
         future_ocr = executor.submit(extrair_ocr_melhorado, caminho_pdf)
@@ -135,22 +134,21 @@ def processar_documento_final(caminho_pdf):
         texto_ocr = future_ocr.result()
         texto_tabelas = future_tabelas.result()
 
-    # Consolidação dos dados visuais/estruturais
     dados_extras = f"--- DADOS DE TABELAS ---\n{texto_tabelas}\n\n--- DADOS DE IMAGENS ---\n{texto_ocr}"
     resumo_final = resumo_ia
 
-    # 2. Avaliação da IA sobre os dados extras (feita apenas após o resumo principal estar pronto)
     if len(texto_ocr) > 20 or len(texto_tabelas) > 10: 
         analise_complementar = avaliar_e_justificar_ocr(resumo_ia, dados_extras)
         
-        # 3. Adiciona a justificativa/complemento ao resumo final se for relevante
         if "IRRELEVANTE" not in analise_complementar.upper():
             resumo_final = f"{resumo_ia} {analise_complementar}"
 
     paginas_ref = localizar_paginas_referencia(caminho_pdf, resumo_ia)
 
+    # Nova formatação de retorno contendo a linha do CNPJ
     return (
         f"**DE:** {meta['De']}\n"
+        f"**DOCUMENTO:** {meta.get('Documento', 'Não identificado')}\n"
         f"**PARA:** {meta['Para']}\n"
         f"**PÁGINAS DE ORIGEM:** {paginas_ref}\n"
         f"**RESUMO:** {resumo_final}"
