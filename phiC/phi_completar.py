@@ -7,7 +7,7 @@ os.environ['http_proxy'] = proxy_url
 os.environ['https_proxy'] = proxy_url
 
 # Pasta onde está o seu modelo fundido
-diretorio_destino = "./phi_completo_merged"
+diretorio_destino = "./app/models/phi_completo_merged"
 
 # Lista de arquivos de código necessários para o Phi-3
 arquivos_necessarios = [

@@ -72,32 +72,32 @@ class PDFGenerator:
 
     def _prepare_data_for_table(self, result_text: str, styles: dict) -> list:
         processed_data = []
-        # Lê linha a linha procurando o padrão "**CHAVE:** Valor"
-        lines = result_text.split('\n')
+        # Captura a chave entre ** e todo o texto seguinte até encontrar os próximos ** ou o fim do texto
+        matches = re.findall(r'\*\*(.*?)\*\*(?:\s*:)?\s*(.*?)(?=\n\*\*|$)', result_text, re.DOTALL)
         
-        for line in lines:
-            line = line.strip()
-            if not line: continue
+        for key, value in matches:
+            key_clean = key.replace(':', '').strip()
             
-            match = re.match(r'\*\*(.*?)\*\*(?:\s*:)?\s*(.*)', line)
-            if match:
-                key = match.group(1).replace(':', '').strip()
-                value = match.group(2).strip()
+            # Divide o valor em várias linhas reais baseado nas quebras de linha (\n)
+            linhas_valor = [linha for linha in value.split('\n') if linha.strip()]
+            
+            if not linhas_valor:
+                linhas_valor = [""] # Garante que adicione ao menos uma linha caso venha vazio
                 
-                key_paragraph = Paragraph(key, styles['key_style'])
-                value_paragraph = Paragraph(value, styles['value_style'])
-                processed_data.append([key_paragraph, value_paragraph])
-            else:
-                # Se for uma linha solta, coloca na coluna de valor da última chave
-                if processed_data:
-                    # Adiciona a linha ao parágrafo anterior (simplificado)
-                    pass 
-                else:
-                    value_paragraph = Paragraph(line, styles['value_style'])
-                    processed_data.append(['', value_paragraph])
+            key_paragraph = Paragraph(key_clean, styles['key_style'])
+            
+            # A primeira linha da tabela recebe a chave (ex: "EVENTOS") e o primeiro valor
+            primeira_linha = Paragraph(linhas_valor[0].strip(), styles['value_style'])
+            processed_data.append([key_paragraph, primeira_linha])
+            
+            # As linhas seguintes recebem uma string vazia '' na coluna da chave.
+            # O ReportLab vai quebrar essas linhas perfeitamente em várias páginas.
+            for linha in linhas_valor[1:]:
+                linha_paragrafo = Paragraph(linha.strip(), styles['value_style'])
+                processed_data.append(['', linha_paragrafo])
 
         return processed_data
-
+    
     def create_summary_pdf(self, structured_summary: str, codigo_rastreio: str = None) -> str:
         os.makedirs(self.output_dir, exist_ok=True)
         nome_arquivo = f"resumo_{codigo_rastreio}.pdf" if codigo_rastreio else f"{uuid.uuid4().hex}.pdf"

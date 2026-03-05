@@ -21,8 +21,8 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Caminhos
 modelo_base_id = "microsoft/Phi-3-mini-4k-instruct"
-caminho_lora = "./phi"  
-caminho_saida = "./phi_completo_merged"
+caminho_lora = "./app/models/phi"  
+caminho_saida = "./app/models/phi_completo_merged"
 
 print("1. Carregando modelo base...")
 modelo_base = AutoModelForCausalLM.from_pretrained(

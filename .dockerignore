@@ -22,7 +22,7 @@
 # Ignora pastas de bibliotecas ou dados que sobraram
 phiC/
 app/models
-
+llama.cpp-master/
 
 # Ignora arquivos compactados
 *.zip

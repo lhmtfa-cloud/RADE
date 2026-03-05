@@ -4,8 +4,6 @@ python-multipart
 PyMuPDF
 pytesseract
 pdf2image
-ctranslate2
-transformers
 reportlab
 tqdm
 fpdf2==2.7.8

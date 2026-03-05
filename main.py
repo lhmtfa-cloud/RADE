@@ -166,7 +166,7 @@ def tarefa_em_background(tracking_code: str, file_path: str, filename: str, user
     
     try:
         jobs[tracking_code]["status"] = "summarizing"
-        texto_resultado, texto_ocr = processar_documento_final(file_path)
+        texto_resultado, texto_ocr, caminho_events_txt = processar_documento_final(file_path)
         
         # Salva o conteúdo do OCR em um arquivo de texto
         with open(ocr_path, "w", encoding="utf-8") as f:
@@ -184,6 +184,7 @@ def tarefa_em_background(tracking_code: str, file_path: str, filename: str, user
         jobs[tracking_code]["pdf_path"] = caminho_pdf
         jobs[tracking_code]["ocr_path"] = ocr_path
         jobs[tracking_code]["log_path"] = log_path
+        jobs[tracking_code]["events_path"] = caminho_events_txt
         
         user_history.append({
             "owner": {"username": username},
@@ -242,6 +243,7 @@ async def download_zip(code: str, admin: dict = Depends(get_current_admin)):
     original_path = jobs[code].get("original_path") 
     ocr_path = jobs[code].get("ocr_path")
     log_path = jobs[code].get("log_path")
+    events_path = jobs[code].get("events_path")
     
     zip_filename = f"processado_{code}.zip"
     zip_path = os.path.join(PDF_DIR, zip_filename)
@@ -258,5 +260,8 @@ async def download_zip(code: str, admin: dict = Depends(get_current_admin)):
             
         if log_path and os.path.exists(log_path):
             zipf.write(log_path, "log.txt")
+        
+        if events_path and os.path.exists(events_path):
+            zipf.write(events_path, "events.txt")
             
     return FileResponse(zip_path, media_type='application/zip', filename=zip_filename)

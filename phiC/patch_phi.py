@@ -1,6 +1,6 @@
 import os
 
-path = "phi_completo_merged/modeling_phi3.py"
+path = "app/models/phi_completo_merged/modeling_phi3.py"
 
 with open(path, "r", encoding="utf-8") as f:
     linhas = f.readlines()
