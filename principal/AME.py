@@ -2,81 +2,89 @@ import fitz
 import concurrent.futures
 import pytesseract
 import pdfplumber
+import requests
+import queue
+import threading
 from PIL import Image, ImageEnhance, ImageOps
-from llama_cpp import Llama
 from .limpeza import extrair_metadados_protocolo, extrair_texto_bruto_pdf, limpar_texto_para_ia, extrair_timeline_protocolo, gerar_arquivo_eventos
 
-MODEL_PATH = r"./app/models/phi_pt_f16.gguf"                 
+# Configurações das APIs Locais
+URL_GPU = "http://llama-gpu:8001/v1/completions"
+URL_CPU = "http://llama-cpu:8002/v1/completions"
 
 num_threads = 4
 
-llm = Llama(
-    model_path=MODEL_PATH,
-    n_gpu_layers=-1,
-    n_ctx=4096,
-    verbose=False
-)
+def chamar_llm_api(prompt, max_tokens=120, temperature=0.2, usar_cpu=False):
+    url = URL_CPU if usar_cpu else URL_GPU
+    payload = {
+        "prompt": prompt,
+        "max_tokens": max_tokens,
+        "temperature": temperature,
+        "stop": ["<|end|>"]
+    }
+    try:
+        # Adicionado proxies={"http": None, "https": None} para ignorar o proxy da SETI
+        response = requests.post(
+            url, 
+            json=payload, 
+            timeout=300, 
+            proxies={"http": None, "https": None}
+        ) 
+        response.raise_for_status()
+        return response.json()['choices'][0]['text'].strip()
+    except Exception as e:
+        print(f"Erro na API LLM (CPU={usar_cpu}): {e}")
+        return "Erro ao processar com IA."
 
 def localizar_paginas_referencia(caminho_pdf, resumo_ia):
+    # ... (Mantenha o código original desta função) ...
     doc = fitz.open(caminho_pdf)
     palavras_chave = [w for w in resumo_ia.lower().split() if len(w) > 5] 
-    
     paginas_encontradas = []
-    
     for i, pagina in enumerate(doc):
         texto_pag = pagina.get_text("text").lower()
         matches = sum(1 for p in palavras_chave if p in texto_pag)
         if matches > len(palavras_chave) * 0.3:
             paginas_encontradas.append(str(i + 1))
-            
     doc.close()
     return ", ".join(paginas_encontradas) if paginas_encontradas else "Não identificada"
 
 def extrair_ocr_melhorado(caminho_pdf):
+    # ... (Mantenha o código original desta função) ...
     texto_ocr = ""
     config_tesseract = "--psm 6" 
-    
     try:
         doc = fitz.open(caminho_pdf)
         limite = min(15, len(doc))
-        
         for i in range(limite):
             pagina = doc[i]
-            
             if len(pagina.get_text("text").strip()) > 100:
                 continue 
-                
             pix = pagina.get_pixmap(matrix=fitz.Matrix(1.5, 1.5))
             img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-            
             img_gray = ImageOps.grayscale(img)
             img_contrast = ImageEnhance.Contrast(img_gray).enhance(2.0)
-            
             texto_ocr += pytesseract.image_to_string(img_contrast, lang="por", config=config_tesseract) + "\n"
-            
         doc.close()
     except Exception as e:
         print(f"Aviso no OCR: {e}")
         return ""
-    
     return texto_ocr.strip()
 
 def extrair_tabelas_pdf(caminho_pdf):
+    # ... (Mantenha o código original desta função) ...
     texto_tabelas = ""
     try:
         doc_teste = fitz.open(caminho_pdf)
         paginas_com_tabela = []
         palavras_chave = ["r$", "valor", "quantidade", "total", "unitário", "descrição", "preço"]
-        
         for i in range(min(15, len(doc_teste))):
             texto_pag = doc_teste[i].get_text("text").lower()
             if any(p in texto_pag for p in palavras_chave):
                 paginas_com_tabela.append(i)
         doc_teste.close()
-
         if not paginas_com_tabela:
             return ""
-
         with pdfplumber.open(caminho_pdf) as pdf:
             for idx in paginas_com_tabela:
                 tabelas = pdf.pages[idx].extract_tables()
@@ -89,7 +97,6 @@ def extrair_tabelas_pdf(caminho_pdf):
     except Exception as e:
         print(f"Aviso na extração de tabelas: {e}")
         return ""
-        
     return texto_tabelas.strip()
 
 def avaliar_e_justificar_ocr(resumo_original, dados_extras):
@@ -102,15 +109,7 @@ def avaliar_e_justificar_ocr(resumo_original, dados_extras):
         f"DADOS EXTRAS:\n{dados_extras[:1500]}\n<|end|>\n"
         f"<|assistant|>\n"
     )
-    
-    output = llm(
-        prompt,
-        max_tokens=150,
-        temperature=0.2,
-        repeat_penalty=1.1,
-        echo=False
-    )
-    return output['choices'][0]['text'].strip()
+    return chamar_llm_api(prompt, max_tokens=150, temperature=0.2, usar_cpu=False) # Mantém na GPU
 
 def gerar_resumo_phi(texto_limpo):
     prompt = (
@@ -121,15 +120,7 @@ def gerar_resumo_phi(texto_limpo):
         f"CONTEÚDO DO DOCUMENTO:\n{texto_limpo[:1500]}\n<|end|>\n"
         f"<|assistant|>\n"
     )
-    
-    output = llm(
-        prompt,
-        max_tokens=120,
-        temperature=0.2,
-        repeat_penalty=1.1,
-        echo=False
-    )
-    return output['choices'][0]['text'].strip()
+    return chamar_llm_api(prompt, max_tokens=120, temperature=0.2, usar_cpu=False) # Mantém na GPU
 
 def processar_documento_final(caminho_pdf):
     doc_leitura = fitz.open(caminho_pdf)
@@ -150,10 +141,11 @@ def processar_documento_final(caminho_pdf):
         texto_tabelas = future_tabelas.result()
         timeline_data = future_timeline.result()
 
-    eventos_resumidos = []
-    timeline_para_txt = []
+    eventos_resumidos_raw = []
+    timeline_para_txt_raw = []
     
     if timeline_data:
+        prompts_eventos = []
         for item in timeline_data:
             texto_pag = doc_leitura[item['pagina'] - 1].get_text("text")
             prompt = (
@@ -163,23 +155,65 @@ def processar_documento_final(caminho_pdf):
                 f"CONTEÚDO DA PÁGINA:\n{texto_pag[:2000]}\n<|end|>\n"
                 f"<|assistant|>\n"
             )
-            
-            res = llm(
-                prompt,
-                max_tokens=100,
-                temperature=0.2,
-                echo=False
-            )
-            
-            resumo_evento = res['choices'][0]['text'].strip()
-            num_pag = item['pagina']
-            evento_str = item['evento_str']
-            
-            linha_pdf = f"Página {num_pag:03d}: {resumo_evento}"
-            eventos_resumidos.append(linha_pdf)
-            timeline_para_txt.append(f"Página {num_pag:04d} | {evento_str}")
+            prompts_eventos.append((item, prompt))
 
-    caminho_events_txt = gerar_arquivo_eventos(timeline_para_txt)
+        # --- INÍCIO DO BALANCEAMENTO DINÂMICO ---
+        fila_tarefas = queue.Queue()
+        for item, prompt in prompts_eventos:
+            fila_tarefas.put((item, prompt))
+
+        eventos_resumidos_raw = []
+        timeline_para_txt_raw = []
+        lock = threading.Lock()
+
+        def worker(usar_cpu):
+            while not fila_tarefas.empty():
+                try:
+                    # Puxa a próxima tarefa da fila
+                    item, prompt_atual = fila_tarefas.get_nowait()
+                except queue.Empty:
+                    break
+                
+                resumo_evento = chamar_llm_api(prompt_atual, 100, 0.2, usar_cpu)
+                
+                linha_pdf = f"Página {item['pagina']:03d}: {resumo_evento}"
+                linha_txt = f"Página {item['pagina']:04d} | {item['evento_str']}"
+                
+                # Bloqueia a lista rapidamente apenas para salvar o resultado com segurança
+                with lock:
+                    eventos_resumidos_raw.append((item['pagina'], linha_pdf))
+                    timeline_para_txt_raw.append((item['pagina'], linha_txt))
+                
+                fila_tarefas.task_done()
+
+        # Dispara as Threads de requisição
+        threads = []
+        
+        # Cria 8 conexões simultâneas puxando para a GPU (Continuous Batching)
+        for _ in range(8):
+            t = threading.Thread(target=worker, args=(False,))
+            threads.append(t)
+            t.start()
+            
+        # Cria 2 conexões simultâneas puxando para a CPU
+        for _ in range(2):
+            t = threading.Thread(target=worker, args=(True,))
+            threads.append(t)
+            t.start()
+
+        # Aguarda todas as requisições terminarem
+        for t in threads:
+            t.join()
+        # --- FIM DO BALANCEAMENTO DINÂMICO ---
+
+        # Ordena os resultados para garantir a linha do tempo correta
+        eventos_resumidos_raw.sort(key=lambda x: x[0])
+        timeline_para_txt_raw.sort(key=lambda x: x[0])
+        
+        eventos_resumidos = [x[1] for x in eventos_resumidos_raw]
+        timeline_para_txt = [x[1] for x in timeline_para_txt_raw]
+
+    caminho_events_txt = gerar_arquivo_eventos(timeline_para_txt if timeline_data else [])
 
     dados_extras = f"--- DADOS DE TABELAS ---\n{texto_tabelas}\n\n--- DADOS DE IMAGENS ---\n{texto_ocr}"
     resumo_final = resumo_ia
@@ -190,7 +224,7 @@ def processar_documento_final(caminho_pdf):
             resumo_final = f"{resumo_ia} {analise_complementar}"
 
     paginas_ref = localizar_paginas_referencia(caminho_pdf, resumo_ia)
-    resumo_eventos_str = "\n".join(eventos_resumidos) if eventos_resumidos else "Nenhuma movimentação detalhada encontrada."
+    resumo_eventos_str = "\n".join(eventos_resumidos) if timeline_data and eventos_resumidos else "Nenhuma movimentação detalhada encontrada."
 
     doc_leitura.close()
 

@@ -9,3 +9,7 @@ tqdm
 fpdf2==2.7.8
 pdfplumber 
 Pillow
+requests
+sse-starlette
+starlette-context
+pydantic-settings
