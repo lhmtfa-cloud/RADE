@@ -11,13 +11,10 @@ MODEL_PATH = r"./app/models/phi_pt_f16.gguf"
 num_threads = 4
 
 llm = Llama(
-model_path=MODEL_PATH,
+    model_path=MODEL_PATH,
     n_gpu_layers=-1,
     n_ctx=4096,
-    n_threads=8,          
-    n_batch=512,         
-    use_mlock=True,       
-    verbose=True
+    verbose=False
 )
 
 def localizar_paginas_referencia(caminho_pdf, resumo_ia):
