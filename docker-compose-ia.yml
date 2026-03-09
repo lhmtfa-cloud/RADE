@@ -1,31 +1,16 @@
 services:
-  app:
+  llama-gpu:
     build: 
       context: .
       dockerfile: Dockerfile
-    image: rafaelaugustodocumentoextratorrade-app
-    ports:
-      - "8000:8000"
-    volumes:
-      - .:/app
-    depends_on:
-      - llama-gpu
-      - llama-cpu
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
-
-  llama-gpu:
     image: rafaelaugustodocumentoextratorrade-app
     command: ["python", "-m", "llama_cpp.server", "--model", "./app/models/phi_pt_q4_k_m.gguf", "--n_gpu_layers", "-1", "--n_ctx", "4096", "--flash_attn", "True", "--host", "0.0.0.0", "--port", "8001"]
     ports:
       - "8001:8001"
     volumes:
       - .:/app
+    networks:
+      - rade_net
     deploy:
       resources:
         reservations:
@@ -41,6 +26,8 @@ services:
       - "8002:8002"
     volumes:
       - .:/app
+    networks:
+      - rade_net
     deploy:
       resources:
         reservations:
@@ -48,3 +35,7 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
+
+networks:
+  rade_net:
+    external: true

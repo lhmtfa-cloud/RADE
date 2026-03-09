@@ -18,3 +18,4 @@ venv/
 env/
 models/
 llama.cpp-master/
+llama/

@@ -23,6 +23,7 @@
 phiC/
 app/models
 llama.cpp-master/
+llama/
 
 # Ignora arquivos compactados
 *.zip

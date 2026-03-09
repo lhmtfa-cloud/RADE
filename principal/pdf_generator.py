@@ -1,6 +1,7 @@
 import re
 import os
 import uuid
+import textwrap
 from reportlab.lib.pagesizes import A4
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -72,26 +73,32 @@ class PDFGenerator:
 
     def _prepare_data_for_table(self, result_text: str, styles: dict) -> list:
         processed_data = []
-        # Captura a chave entre ** e todo o texto seguinte até encontrar os próximos ** ou o fim do texto
         matches = re.findall(r'\*\*(.*?)\*\*(?:\s*:)?\s*(.*?)(?=\n\*\*|$)', result_text, re.DOTALL)
         
         for key, value in matches:
             key_clean = key.replace(':', '').strip()
             
-            # Divide o valor em várias linhas reais baseado nas quebras de linha (\n)
-            linhas_valor = [linha for linha in value.split('\n') if linha.strip()]
+            # Divide o valor inicialmente pelas quebras de linha reais
+            linhas_brutas = [linha for linha in value.split('\n') if linha.strip()]
             
-            if not linhas_valor:
-                linhas_valor = [""] # Garante que adicione ao menos uma linha caso venha vazio
+            if not linhas_brutas:
+                linhas_brutas = [""]
                 
+            # Força a divisão de linhas gigantes para evitar células maiores que a página
+            linhas_valor = []
+            for linha in linhas_brutas:
+                # Quebra blocos contínuos a cada 400 caracteres
+                pedacos = textwrap.wrap(linha, width=400)
+                if pedacos:
+                    linhas_valor.extend(pedacos)
+                else:
+                    linhas_valor.append("")
+
             key_paragraph = Paragraph(key_clean, styles['key_style'])
             
-            # A primeira linha da tabela recebe a chave (ex: "EVENTOS") e o primeiro valor
             primeira_linha = Paragraph(linhas_valor[0].strip(), styles['value_style'])
             processed_data.append([key_paragraph, primeira_linha])
             
-            # As linhas seguintes recebem uma string vazia '' na coluna da chave.
-            # O ReportLab vai quebrar essas linhas perfeitamente em várias páginas.
             for linha in linhas_valor[1:]:
                 linha_paragrafo = Paragraph(linha.strip(), styles['value_style'])
                 processed_data.append(['', linha_paragrafo])

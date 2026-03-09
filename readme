@@ -22,3 +22,16 @@ docker compose up -d
 docker compose up --build
 
 docker compose restart app
+
+
+docker network create rade_net
+
+docker compose -f docker-compose-ia.yml up -d
+
+docker compose -f docker-compose-app.yml up -d
+
+docker compose -f docker-compose-app.yml down
+docker compose -f docker-compose-app.yml restart app-dev
+
+(caso caia a luz)
+docker compose -f docker-compose-app.yml -f docker-compose-ia.yml up -d --no-build
