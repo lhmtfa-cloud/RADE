@@ -14,7 +14,7 @@ URL_CPU = "http://llama-cpu:8002/v1/completions"
 
 num_threads = 4
 
-def chamar_llm_api(prompt, max_tokens=200, temperature=0.2, usar_cpu=False):
+def chamar_llm_api(prompt, max_tokens=450, temperature=0.2, usar_cpu=False):
     url = URL_CPU if usar_cpu else URL_GPU
     payload = {
         "prompt": prompt,
@@ -154,13 +154,13 @@ def gerar_resumo_phi(texto_limpo):
     prompt = (
         f"<|user|>\n"
         f"Você é um assistente administrativo da SETI/PR. Sua tarefa é ler o documento abaixo e responder EXCLUSIVAMENTE em Português do Brasil.\n"
-        f"Regra: Escreva uma única frase direta. Não invente campos extras.\n\n"
+        f"Regra: Escreva uma única frase direta e completa. Não invente campos extras.\n\n"
         f"TEXTO PARA ANALISAR:\n"
         f"### INÍCIO ###\n{texto_limpo[:1500]}\n### FIM ###\n<|end|>\n"
         f"<|assistant|>\n"
         f"Resumo em português: "
     )
-    return chamar_llm_api(prompt, max_tokens=120, temperature=0.1, usar_cpu=False)
+    return chamar_llm_api(prompt, max_tokens=200, temperature=0.1, usar_cpu=False)
 
 def processar_documento_final(caminho_pdf):
     doc_leitura = fitz.open(caminho_pdf)
@@ -253,18 +253,24 @@ def processar_documento_final(caminho_pdf):
         for mov in movimentacoes:
             texto_bloco = ""
             for p in range(mov['pag_inicio'] - 1, mov['pag_fim']):
-                texto_bloco += doc_leitura[p].get_text("text") + "\n"
+                texto_bloco += doc_leitura[p].get_text("text") + " "
+            
+            # Limpa o texto: remove quebras de linha e padroniza espaços
+            texto_bloco = re.sub(r'\s+', ' ', texto_bloco).strip()
                 
             prompt = (
                 f"<|user|>\n"
-                f"Analise APENAS a Movimentação {mov['mov']} deste processo administrativo.\n"
-                f"Descreva de forma direta e concisa o que acontece NESTA movimentação específica. Não resuma outras páginas.\n\n"
+                f"Você é um assistente técnico e analítico rigoroso. Analise APENAS o texto da Movimentação {mov['mov']} abaixo.\n\n"
+                f"REGRAS DE SEGURANÇA:\n"
+                f"1. Extraia EXCLUSIVAMENTE as informações contidas no texto. Se algo não constar, escreva 'Não informado'.\n"
+                f"2. NUNCA invente nomes, dados financeiros, leis, políticos ou fatos externos ao documento.\n"
+                f"3. O resumo deve ter no máximo 3 frases, focando puramente na ação administrativa solicitada.\n\n"
                 f"Responda estritamente neste formato:\n"
                 f"- **Tipo de Documento:**\n"
                 f"- **Remetente/Assinante:**\n"
                 f"- **Destinatário:**\n"
                 f"- **Assunto/Resumo da Movimentação:**\n\n"
-                f"TEXTO DA MOVIMENTAÇÃO:\n{texto_bloco[:3500]}\n<|end|>\n"
+                f"TEXTO DA MOVIMENTAÇÃO:\n{texto_bloco[:4000]}\n<|end|>\n"
                 f"<|assistant|>\n"
             )
             
@@ -293,7 +299,7 @@ def processar_documento_final(caminho_pdf):
                 except queue.Empty:
                     break
                 
-                resumo_bloco = chamar_llm_api(bloco_atual["prompt"], 200, 0.2, usar_cpu)
+                resumo_bloco = chamar_llm_api(bloco_atual["prompt"], 450, 0.2, usar_cpu)
                 
                 linha_pdf = f"**{bloco_atual['paginas']} | Movimentação {bloco_atual['mov']}**\n{resumo_bloco}\n"
                 linha_txt = f"{bloco_atual['paginas']} | Movimentação {bloco_atual['mov']} | {resumo_bloco.replace(chr(10), ' ')}"
@@ -335,7 +341,7 @@ def processar_documento_final(caminho_pdf):
                 f"Se houver erros, descreva-os de forma técnica e breve.\n<|end|>\n"
                 f"<|assistant|>\n"
             )
-        inconsistencias_resultado = chamar_llm_api(prompt_inconsistencias, 250, 0.1, False)
+        inconsistencias_resultado = chamar_llm_api(prompt_inconsistencias, 300, 0.1, False)
 
     caminho_events_txt = gerar_arquivo_eventos(timeline_para_txt if movimentacoes else [])
 

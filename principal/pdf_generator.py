@@ -71,16 +71,25 @@ class PDFGenerator:
     def _prepare_data_for_table(self, result_text: str, styles: dict) -> tuple:
         result_text = re.sub(r'(?i)\*?\*?\s*DETALHAMENTO POR BLOCOS\s*\*?\*?[\s:\-]*', '', result_text).strip()
         
-        pattern = re.compile(r'(?:^|\n)\s*\*\*([^\n]+?)\*\*(?:\s*:)?\s*(.*?)(?=\n\s*\*\*|$)', re.DOTALL)
-        matches = pattern.findall(result_text)
+        pattern = re.compile(
+            r'(?:^|\n)\s*\*\*\s*(INTERESSADO|DOCUMENTO|DESTINATÁRIO|PÁGINAS DE ORIGEM|RESUMO PRINCIPAL|INCONSISTÊNCIAS IDENTIFICADAS|Pág.*?\|\s*Movimentação.*?)\s*:?\s*\*\*(?:\s*:)?',
+            re.IGNORECASE
+        )
+        
+        parts = pattern.split(result_text)
         
         processed_data = []
         block_boundaries = []
         current_row = 0
         
-        for key, value in matches:
+        for i in range(1, len(parts), 2):
             start_row = current_row
-            key_clean = key.strip()
+            key_clean = parts[i].strip()
+            value = parts[i+1].strip() if i+1 < len(parts) else ""
+            
+            value = value.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+            
+            value = value.replace('**', '')
             
             linhas_brutas = [linha for linha in value.split('\n') if linha.strip()]
             if not linhas_brutas:
@@ -129,6 +138,7 @@ class PDFGenerator:
 
         try:
             prepared_data, block_boundaries = self._prepare_data_for_table(structured_summary, styles)
+            
             if not prepared_data:
                 p = Paragraph(structured_summary.replace('\n', '<br/>'), styles['value_style'])
                 doc.build([p], onFirstPage=self._add_page_header, onLaterPages=self._add_page_header)
