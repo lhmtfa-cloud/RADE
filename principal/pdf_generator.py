@@ -13,7 +13,6 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.utils import ImageReader
 
 try:
-    # Ajuste para funcionar tanto no Windows quanto no Linux (Docker)
     arial_path = 'arial.ttf' 
     arial_bold_path = 'arialbd.ttf'
 
@@ -31,11 +30,9 @@ try:
     pdfmetrics.registerFont(TTFont('Arial-Bold', arial_bold_path))
     FONT_FAMILY = 'Arial'
     FONT_FAMILY_BOLD = 'Arial-Bold'
-except Exception as e:
-    print(f"Alerta: Fonte Arial não encontrada. Usando Helvetica padrão. Erro: {e}")
+except Exception:
     FONT_FAMILY = 'Helvetica'
     FONT_FAMILY_BOLD = 'Helvetica-Bold'
-
 
 SCRIPT_DIRECTORY = os.path.dirname(os.path.abspath(__file__))
 ABSOLUTE_LOGO_PATH = os.path.join(SCRIPT_DIRECTORY, "logo.png")
@@ -71,39 +68,46 @@ class PDFGenerator:
         except Exception:
             pass
 
-    def _prepare_data_for_table(self, result_text: str, styles: dict) -> list:
+    def _prepare_data_for_table(self, result_text: str, styles: dict) -> tuple:
+        result_text = re.sub(r'(?i)\*?\*?\s*DETALHAMENTO POR BLOCOS\s*\*?\*?[\s:\-]*', '', result_text).strip()
+        
+        pattern = re.compile(r'(?:^|\n)\s*\*\*([^\n]+?)\*\*(?:\s*:)?\s*(.*?)(?=\n\s*\*\*|$)', re.DOTALL)
+        matches = pattern.findall(result_text)
+        
         processed_data = []
-        matches = re.findall(r'\*\*(.*?)\*\*(?:\s*:)?\s*(.*?)(?=\n\*\*|$)', result_text, re.DOTALL)
+        block_boundaries = []
+        current_row = 0
         
         for key, value in matches:
-            key_clean = key.replace(':', '').strip()
+            start_row = current_row
+            key_clean = key.strip()
             
-            # Divide o valor inicialmente pelas quebras de linha reais
             linhas_brutas = [linha for linha in value.split('\n') if linha.strip()]
-            
             if not linhas_brutas:
                 linhas_brutas = [""]
                 
-            # Força a divisão de linhas gigantes para evitar células maiores que a página
             linhas_valor = []
             for linha in linhas_brutas:
-                # Quebra blocos contínuos a cada 400 caracteres
-                pedacos = textwrap.wrap(linha, width=400)
+                pedacos = textwrap.wrap(linha, width=150)
                 if pedacos:
                     linhas_valor.extend(pedacos)
                 else:
                     linhas_valor.append("")
 
             key_paragraph = Paragraph(key_clean, styles['key_style'])
-            
             primeira_linha = Paragraph(linhas_valor[0].strip(), styles['value_style'])
             processed_data.append([key_paragraph, primeira_linha])
+            current_row += 1
             
             for linha in linhas_valor[1:]:
                 linha_paragrafo = Paragraph(linha.strip(), styles['value_style'])
                 processed_data.append(['', linha_paragrafo])
+                current_row += 1
+                
+            end_row = current_row - 1
+            block_boundaries.append((start_row, end_row))
 
-        return processed_data
+        return processed_data, block_boundaries
     
     def create_summary_pdf(self, structured_summary: str, codigo_rastreio: str = None) -> str:
         os.makedirs(self.output_dir, exist_ok=True)
@@ -124,35 +128,33 @@ class PDFGenerator:
         styles['value_style'] = ParagraphStyle(name='ValueStyle', parent=base_style, alignment=TA_LEFT)
 
         try:
-            prepared_data = self._prepare_data_for_table(structured_summary, styles)
+            prepared_data, block_boundaries = self._prepare_data_for_table(structured_summary, styles)
             if not prepared_data:
-                # Se não houver dados no formato esperado, apenas joga o texto na tela
                 p = Paragraph(structured_summary.replace('\n', '<br/>'), styles['value_style'])
                 doc.build([p], onFirstPage=self._add_page_header, onLaterPages=self._add_page_header)
                 return caminho_pdf
 
-            table = Table(prepared_data, colWidths=[doc.width * 0.25, doc.width * 0.75])
+            table = Table(prepared_data, colWidths=[doc.width * 0.30, doc.width * 0.70])
             
             style_commands = [
-                ('GRID', (0, 0), (-1, -1), 1, colors.grey),
                 ('VALIGN', (0, 0), (-1, -1), 'TOP'),
                 ('LEFTPADDING', (0, 0), (-1, -1), 4*mm),
                 ('RIGHTPADDING', (0, 0), (-1, -1), 4*mm),
                 ('TOPPADDING', (0, 0), (-1, -1), 2*mm),
                 ('BOTTOMPADDING', (0, 0), (-1, -1), 2*mm),
                 ('BACKGROUND', (0, 0), (0, -1), colors.whitesmoke),
+                ('BOX', (0, 0), (-1, -1), 1, colors.grey),
+                ('LINEAFTER', (0, 0), (0, -1), 1, colors.grey),
             ]
 
-            for i, row_data in enumerate(prepared_data):
-                if i > 0 and row_data[0] == '':
-                    style_commands.append(('LINEABOVE', (0, i), (0, i), 1, colors.whitesmoke))
-                    style_commands.append(('LINEABOVE', (1, i), (1, i), 1, colors.white))
+            for start_row, end_row in block_boundaries:
+                if end_row < len(prepared_data) - 1:
+                    style_commands.append(('LINEBELOW', (0, end_row), (-1, end_row), 1, colors.grey))
 
             table.setStyle(TableStyle(style_commands))
 
             doc.build([table], onFirstPage=self._add_page_header, onLaterPages=self._add_page_header)
             return caminho_pdf
             
-        except Exception as e:
-            print(f"Erro ao gerar PDF: {e}")
+        except Exception:
             raise

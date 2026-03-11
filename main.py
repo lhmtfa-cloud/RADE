@@ -163,14 +163,21 @@ def tarefa_em_background(tracking_code: str, file_path: str, filename: str, user
     
     ocr_path = os.path.join(PDF_DIR, f"ocr_{tracking_code}.txt")
     log_path = os.path.join(PDF_DIR, f"log_{tracking_code}.txt")
+    debug_path = os.path.join(PDF_DIR, f"debug_blocos_{tracking_code}.txt")
     
     try:
         jobs[tracking_code]["status"] = "summarizing"
-        texto_resultado, texto_ocr, caminho_events_txt = processar_documento_final(file_path)
         
-        # Salva o conteúdo do OCR em um arquivo de texto
+        # Agora recebe a 4ª variável
+        texto_resultado, texto_ocr, caminho_events_txt, debug_texto_blocos = processar_documento_final(file_path)
+        
+        # Salva o conteúdo do OCR
         with open(ocr_path, "w", encoding="utf-8") as f:
             f.write(texto_ocr if texto_ocr.strip() else "Nenhum texto extraído via OCR.")
+            
+        # Salva o arquivo de debug de blocos
+        with open(debug_path, "w", encoding="utf-8") as f:
+            f.write(debug_texto_blocos)
             
         log_messages.append(f"[{datetime.now().isoformat()}] Resumo gerado e OCR extraído com sucesso.")
         
@@ -185,6 +192,7 @@ def tarefa_em_background(tracking_code: str, file_path: str, filename: str, user
         jobs[tracking_code]["ocr_path"] = ocr_path
         jobs[tracking_code]["log_path"] = log_path
         jobs[tracking_code]["events_path"] = caminho_events_txt
+        jobs[tracking_code]["debug_path"] = debug_path
         
         user_history.append({
             "owner": {"username": username},
@@ -244,6 +252,7 @@ async def download_zip(code: str, admin: dict = Depends(get_current_admin)):
     ocr_path = jobs[code].get("ocr_path")
     log_path = jobs[code].get("log_path")
     events_path = jobs[code].get("events_path")
+    debug_path = jobs[code].get("debug_path")
     
     zip_filename = f"processado_{code}.zip"
     zip_path = os.path.join(PDF_DIR, zip_filename)
@@ -263,5 +272,8 @@ async def download_zip(code: str, admin: dict = Depends(get_current_admin)):
         
         if events_path and os.path.exists(events_path):
             zipf.write(events_path, "events.txt")
+            
+        if debug_path and os.path.exists(debug_path):
+            zipf.write(debug_path, "debug_enviado_ia.txt")
             
     return FileResponse(zip_path, media_type='application/zip', filename=zip_filename)
