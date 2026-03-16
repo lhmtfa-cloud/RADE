@@ -1,10 +1,10 @@
 services:
   app-prod:
-    build: 
-      context: .
-      dockerfile: Dockerfile
-    image: rafaelaugustodocumentoextratorrade-app
+    image: rade-app-prod-image:latest
     container_name: rade-app-prod
+    environment:
+      - no_proxy=localhost,127.0.0.1,llama-gpu,llama-gpu-2,llama-cpu,.parana,pr.gov.br
+      - NO_PROXY=localhost,127.0.0.1,llama-gpu,llama-gpu-2,llama-cpu,.parana,pr.gov.br
     ports:
       - "8000:8000"
     networks:
