@@ -152,7 +152,7 @@ class PDFGenerator:
         num_memo = codigo_rastreio[:4].upper() if codigo_rastreio else "0000"
         elements.append(Paragraph(f"Memo n.º {num_memo}/{ano_atual}/SETI-NAS", memo_style))
         
-        para_nome = meta.get('De', 'Interessado') if meta else 'Interessado'
+        para_nome = "[INSERIR AQUI]"
         
         assunto_bruto = meta.get('Assunto', '').strip()
         assunto_limpo = re.sub(r'[:_\-\.]+$', '', assunto_bruto).strip()
@@ -184,7 +184,7 @@ class PDFGenerator:
         elements.append(Spacer(1, 20*mm))
         
         elements.append(Paragraph(username.upper() if username else "USUÁRIO", memo_center_bold))
-        elements.append(Paragraph("NAS/Seti", memo_center))
+        elements.append(Paragraph("[INSERIR AQUI]/Seti", memo_center))
 
         doc.build(elements, onFirstPage=self._add_page_header, onLaterPages=self._add_page_header)
         return caminho_pdf

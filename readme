@@ -35,3 +35,6 @@ docker compose -f docker-compose-app.yml restart app-dev
 
 (caso caia a luz)
 docker compose -f docker-compose-app.yml -f docker-compose-ia.yml up -d --no-build
+
+
+docker compose -f docker-compose-app.yml up app-prod -d --build --force-recreate

@@ -225,6 +225,7 @@ def processar_documento_final(caminho_pdf):
     inconsistencias_resultado = "Não foi possível analisar inconsistências."
     resumo_desde_seti = "Sem movimentações recentes."
     inconsistencias_seti = "Sem inconsistências."
+    decisao_dg = "Nenhuma manifestação da Diretoria Geral encontrada."
     debug_texto_blocos = "=== DEBUG DE TEXTOS E PROMPTS ENVIADOS PARA A IA ===\n\n"
     
     if movimentacoes:
@@ -340,6 +341,17 @@ def processar_documento_final(caminho_pdf):
             f"<|assistant|>\n"
         )
         inconsistencias_resultado = chamar_llm_api(prompt_inconsistencias, 300, 0.1, False)
+        
+        prompt_decisao_dg = (
+            f"<|user|>\nProcure na linha do tempo abaixo a ÚLTIMA manifestação, decisão ou parecer da 'Assessoria do DG', 'Assessoria da Diretoria Geral' ou 'Diretoria Geral'.\n"
+            f"TEXTO:\n{texto_todos_resumos[:3500]}\n\n"
+            f"REGRAS OBRIGATÓRIAS:\n"
+            f"- RESPONDA EXCLUSIVAMENTE EM PORTUGUÊS DO BRASIL.\n"
+            f"- Se não houver, responda apenas 'Nenhuma manifestação da Diretoria Geral encontrada.'\n"
+            f"- Se houver, resuma a última decisão em uma única frase clara.\n<|end|>\n"
+            f"<|assistant|>\n"
+        )
+        decisao_dg = chamar_llm_api(prompt_decisao_dg, 200, 0.1, False).replace('\n', ' ').strip()
 
     caminho_events_txt = gerar_arquivo_eventos(timeline_para_txt if movimentacoes else [])
     dados_extras = f"--- DADOS DE TABELAS ---\n{texto_tabelas}\n\n--- DADOS DE IMAGENS ---\n{texto_ocr}"
@@ -355,14 +367,18 @@ def processar_documento_final(caminho_pdf):
 
     prompt_resposta = (
         f"<|user|>\n"
-        f"Com base EXCLUSIVAMENTE no resumo principal abaixo, redija o corpo de um ofício ou memorando.\n"
-        f"RESUMO: {resumo_final}\n\n"
-        f"REGRAS OBRIGATÓRIAS DE SEGURANÇA:\n"
+        f"Redija o corpo de um ofício/memorando interno baseado no processo atual.\n\n"
+        f"RESUMO DO PROCESSO: {resumo_final}\n"
+        f"INCONSISTÊNCIAS IDENTIFICADAS: {inconsistencias_resultado} | {inconsistencias_seti}\n"
+        f"ÚLTIMO PARECER DA DIRETORIA GERAL (DG): {decisao_dg}\n\n"
+        f"REGRAS OBRIGATÓRIAS DE ESTRUTURA E SEGURANÇA:\n"
         f"1. APENAS O TEXTO DO CORPO. SEM cabeçalho, SEM saudação, SEM data, SEM assinatura.\n"
-        f"2. NUNCA invente justificativas, laboratórios, projetos, nomes ou fatos.\n"
-        f"3. Não 'encha linguiça'. Se a situação for simples (ex: compra interna de mantimentos), a resposta deve ser curta e direta.\n"
-        f"4. Idioma: Português do Brasil.\n"
-        f"5. Escreva um texto completo, NUNCA deixe frases cortadas ou incompletas no final.\n"
+        f"2. O texto DEVE conter EXATAMENTE 3 parágrafos e NENHUM TÓPICO.\n"
+        f"3. O 1º parágrafo deve ser um resumo do processo inteiro, de forma clara e objetiva.\n"
+        f"4. O 2º parágrafo deve ser um resumo unificado das inconsistências encontradas e mencionar explicitamente o último parecer da Diretoria Geral.\n"
+        f"5. O 3º parágrafo deve ser um texto de encaminhamento solicitando as devidas providências, terminando encaminhando para o setor '[INSERIR AQUI]'.\n"
+        f"6. NUNCA invente justificativas, nomes ou fatos.\n"
+        f"7. Idioma: Português do Brasil.\n"
         f"<|end|>\n"
         f"<|assistant|>\n"
     )
