@@ -1,13 +1,13 @@
 import re
 import os
 import uuid
-import textwrap
+from datetime import datetime
 from reportlab.lib.pagesizes import A4
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from reportlab.lib.units import mm
-from reportlab.lib.enums import TA_LEFT
+from reportlab.lib.enums import TA_LEFT, TA_CENTER
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.utils import ImageReader
@@ -72,7 +72,7 @@ class PDFGenerator:
         result_text = re.sub(r'(?i)\*?\*?\s*DETALHAMENTO POR BLOCOS\s*\*?\*?[\s:\-]*', '', result_text).strip()
         
         pattern = re.compile(
-            r'(?:^|\n)\s*\*\*\s*(INTERESSADO|DOCUMENTO|DESTINATÁRIO|PÁGINAS DE ORIGEM|RESUMO PRINCIPAL|INCONSISTÊNCIAS IDENTIFICADAS|Pág.*?\|\s*Movimentação.*?)\s*:?\s*\*\*(?:\s*:)?',
+            r'(?:^|\n)\s*\*\*\s*(INTERESSADO|DOCUMENTO|DESTINATÁRIO|RESUMO PRINCIPAL|INCONSISTÊNCIAS IDENTIFICADAS|Pág.*?\|\s*Movimentação.*?)\s*:?\s*\*\*(?:\s*:)?',
             re.IGNORECASE
         )
         
@@ -83,49 +83,31 @@ class PDFGenerator:
         current_row = 0
         
         for i in range(1, len(parts), 2):
-            start_row = current_row
             key_clean = parts[i].strip()
             value = parts[i+1].strip() if i+1 < len(parts) else ""
             
             value = value.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
-            
             value = value.replace('**', '')
             
-            linhas_brutas = [linha for linha in value.split('\n') if linha.strip()]
-            if not linhas_brutas:
-                linhas_brutas = [""]
-                
-            linhas_valor = []
-            for linha in linhas_brutas:
-                pedacos = textwrap.wrap(linha, width=150)
-                if pedacos:
-                    linhas_valor.extend(pedacos)
-                else:
-                    linhas_valor.append("")
+            value = re.sub(r'\n+(?=\s*-)', '\n\n', value)
+            
+            value_html = value.replace('\n', '<br/>')
 
             key_paragraph = Paragraph(key_clean, styles['key_style'])
-            primeira_linha = Paragraph(linhas_valor[0].strip(), styles['value_style'])
-            processed_data.append([key_paragraph, primeira_linha])
-            current_row += 1
+            value_paragraph = Paragraph(value_html, styles['value_style'])
             
-            for linha in linhas_valor[1:]:
-                linha_paragrafo = Paragraph(linha.strip(), styles['value_style'])
-                processed_data.append(['', linha_paragrafo])
-                current_row += 1
-                
-            end_row = current_row - 1
-            block_boundaries.append((start_row, end_row))
+            processed_data.append([key_paragraph, value_paragraph])
+            block_boundaries.append((current_row, current_row))
+            current_row += 1
 
         return processed_data, block_boundaries
     
-    def create_summary_pdf(self, structured_summary: str, codigo_rastreio: str = None) -> str:
+    def create_summary_pdf(self, structured_summary: str, codigo_rastreio: str = None, username: str = "", corpo_resposta: str = "", meta: dict = None) -> str:
         os.makedirs(self.output_dir, exist_ok=True)
         nome_arquivo = f"resumo_{codigo_rastreio}.pdf" if codigo_rastreio else f"{uuid.uuid4().hex}.pdf"
         caminho_pdf = os.path.join(self.output_dir, nome_arquivo)
         
-        doc = SimpleDocTemplate(caminho_pdf, pagesize=A4,
-                                leftMargin=20*mm, rightMargin=20*mm,
-                                topMargin=30*mm, bottomMargin=20*mm) 
+        doc = SimpleDocTemplate(caminho_pdf, pagesize=A4, leftMargin=20*mm, rightMargin=20*mm, topMargin=30*mm, bottomMargin=20*mm) 
         
         styles = {}
         base_style = getSampleStyleSheet()['Normal']
@@ -135,17 +117,17 @@ class PDFGenerator:
 
         styles['key_style'] = ParagraphStyle(name='KeyStyle', parent=base_style, fontName=FONT_FAMILY_BOLD, alignment=TA_LEFT)
         styles['value_style'] = ParagraphStyle(name='ValueStyle', parent=base_style, alignment=TA_LEFT)
+        
+        memo_style = ParagraphStyle(name='MemoStyle', parent=base_style, alignment=TA_LEFT, spaceAfter=12)
+        memo_indent = ParagraphStyle(name='MemoIndent', parent=base_style, alignment=TA_LEFT, spaceAfter=12, firstLineIndent=20)
+        memo_center = ParagraphStyle(name='MemoCenter', parent=base_style, alignment=TA_CENTER, spaceAfter=5)
+        memo_center_bold = ParagraphStyle(name='MemoCenterBold', parent=base_style, fontName=FONT_FAMILY_BOLD, alignment=TA_CENTER, spaceAfter=2)
 
-        try:
-            prepared_data, block_boundaries = self._prepare_data_for_table(structured_summary, styles)
-            
-            if not prepared_data:
-                p = Paragraph(structured_summary.replace('\n', '<br/>'), styles['value_style'])
-                doc.build([p], onFirstPage=self._add_page_header, onLaterPages=self._add_page_header)
-                return caminho_pdf
-
+        prepared_data, block_boundaries = self._prepare_data_for_table(structured_summary, styles)
+        
+        elements = []
+        if prepared_data:
             table = Table(prepared_data, colWidths=[doc.width * 0.30, doc.width * 0.70])
-            
             style_commands = [
                 ('VALIGN', (0, 0), (-1, -1), 'TOP'),
                 ('LEFTPADDING', (0, 0), (-1, -1), 4*mm),
@@ -156,15 +138,53 @@ class PDFGenerator:
                 ('BOX', (0, 0), (-1, -1), 1, colors.grey),
                 ('LINEAFTER', (0, 0), (0, -1), 1, colors.grey),
             ]
-
             for start_row, end_row in block_boundaries:
                 if end_row < len(prepared_data) - 1:
                     style_commands.append(('LINEBELOW', (0, end_row), (-1, end_row), 1, colors.grey))
-
             table.setStyle(TableStyle(style_commands))
+            elements.append(table)
+        else:
+            elements.append(Paragraph(structured_summary.replace('\n', '<br/>'), styles['value_style']))
 
-            doc.build([table], onFirstPage=self._add_page_header, onLaterPages=self._add_page_header)
-            return caminho_pdf
+        elements.append(PageBreak())
+        
+        ano_atual = datetime.now().year
+        num_memo = codigo_rastreio[:4].upper() if codigo_rastreio else "0000"
+        elements.append(Paragraph(f"Memo n.º {num_memo}/{ano_atual}/SETI-NAS", memo_style))
+        
+        para_nome = meta.get('De', 'Interessado') if meta else 'Interessado'
+        
+        assunto_bruto = meta.get('Assunto', '').strip()
+        assunto_limpo = re.sub(r'[:_\-\.]+$', '', assunto_bruto).strip()
+        
+        palavras_ignoradas = ["n/a", "detalhamento", "assunto", ""]
+        if not assunto_limpo or assunto_limpo.lower() in palavras_ignoradas:
+            assunto_final = 'Documento Oficial'
+        else:
+            assunto_final = assunto_limpo
             
-        except Exception:
-            raise
+        elements.append(Paragraph(f"Para: {para_nome}", memo_style))
+        elements.append(Paragraph(f"Assunto: {assunto_final}", memo_style))
+        elements.append(Spacer(1, 5*mm))
+        
+        elements.append(Paragraph("Senhor(a),", memo_style))
+        
+        if corpo_resposta:
+            for p in corpo_resposta.split('\n'):
+                if p.strip():
+                    elements.append(Paragraph(p.strip(), memo_indent))
+        
+        elements.append(Spacer(1, 15*mm))
+        
+        meses = ["", "janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
+        hoje = datetime.now()
+        data_str = f"Curitiba, {hoje.day} de {meses[hoje.month]} de {hoje.year}."
+        
+        elements.append(Paragraph(data_str, memo_center))
+        elements.append(Spacer(1, 20*mm))
+        
+        elements.append(Paragraph(username.upper() if username else "USUÁRIO", memo_center_bold))
+        elements.append(Paragraph("NAS/Seti", memo_center))
+
+        doc.build(elements, onFirstPage=self._add_page_header, onLaterPages=self._add_page_header)
+        return caminho_pdf

@@ -168,14 +168,11 @@ def tarefa_em_background(tracking_code: str, file_path: str, filename: str, user
     try:
         jobs[tracking_code]["status"] = "summarizing"
         
-        # Agora recebe a 4ª variável
-        texto_resultado, texto_ocr, caminho_events_txt, debug_texto_blocos = processar_documento_final(file_path)
+        texto_resultado, texto_ocr, caminho_events_txt, debug_texto_blocos, corpo_resposta, meta = processar_documento_final(file_path)
         
-        # Salva o conteúdo do OCR
         with open(ocr_path, "w", encoding="utf-8") as f:
             f.write(texto_ocr if texto_ocr.strip() else "Nenhum texto extraído via OCR.")
             
-        # Salva o arquivo de debug de blocos
         with open(debug_path, "w", encoding="utf-8") as f:
             f.write(debug_texto_blocos)
             
@@ -183,7 +180,7 @@ def tarefa_em_background(tracking_code: str, file_path: str, filename: str, user
         
         jobs[tracking_code]["status"] = "generating_pdf"
         gerador = PDFGenerator(output_dir=PDF_DIR)
-        caminho_pdf = gerador.create_summary_pdf(texto_resultado, tracking_code)
+        caminho_pdf = gerador.create_summary_pdf(texto_resultado, tracking_code, username, corpo_resposta, meta)
         
         log_messages.append(f"[{datetime.now().isoformat()}] PDF gerado com sucesso.")
         
@@ -209,7 +206,6 @@ def tarefa_em_background(tracking_code: str, file_path: str, filename: str, user
         elapsed_time = time.time() - start_time
         log_messages.append(f"[{datetime.now().isoformat()}] Tempo total da operação: {elapsed_time:.2f} segundos.")
         
-        # Salva o arquivo de log no final da operação
         with open(log_path, "w", encoding="utf-8") as f:
             f.write("\n".join(log_messages))
 

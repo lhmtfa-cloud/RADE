@@ -11,6 +11,7 @@
 **/.pytest_cache/
 **/.ipynb_checkpoints/
 
+
 # Ignora arquivos de sistema e logs
 **/*.log
 **/*.pyc

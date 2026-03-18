@@ -1,5 +1,8 @@
 services:
   app-prod:
+    build:
+      context: .
+      dockerfile: Dockerfile
     image: rade-app-prod-image:latest
     container_name: rade-app-prod
     environment:
@@ -11,7 +14,7 @@ services:
       - rade_net
 
   app-dev:
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile
     image: rafaelaugustodocumentoextratorrade-app

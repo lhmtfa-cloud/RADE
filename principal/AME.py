@@ -149,7 +149,7 @@ def processar_documento_final(caminho_pdf):
     texto_bruto = extrair_texto_bruto_pdf(caminho_pdf)
     
     if not texto_bruto.strip(): 
-        return "Erro: PDF sem texto.", "", "", ""
+        return "Erro: PDF sem texto.", "", "", "", "", {}
 
     meta = extrair_metadados_protocolo(texto_bruto)
     corpo_limpo = limpar_texto_para_ia(texto_bruto)
@@ -353,12 +353,26 @@ def processar_documento_final(caminho_pdf):
     resumo_eventos_str = "\n".join(eventos_resumidos) if movimentacoes and eventos_resumidos else "Nenhuma movimentação detalhada encontrada."
     doc_leitura.close()
 
+    prompt_resposta = (
+        f"<|user|>\n"
+        f"Com base EXCLUSIVAMENTE no resumo principal abaixo, redija o corpo de um ofício ou memorando.\n"
+        f"RESUMO: {resumo_final}\n\n"
+        f"REGRAS OBRIGATÓRIAS DE SEGURANÇA:\n"
+        f"1. APENAS O TEXTO DO CORPO. SEM cabeçalho, SEM saudação, SEM data, SEM assinatura.\n"
+        f"2. NUNCA invente justificativas, laboratórios, projetos, nomes ou fatos.\n"
+        f"3. Não 'encha linguiça'. Se a situação for simples (ex: compra interna de mantimentos), a resposta deve ser curta e direta.\n"
+        f"4. Idioma: Português do Brasil.\n"
+        f"5. Escreva um texto completo, NUNCA deixe frases cortadas ou incompletas no final.\n"
+        f"<|end|>\n"
+        f"<|assistant|>\n"
+    )
+    corpo_resposta = chamar_llm_api(prompt_resposta, 600, 0.1, False).strip()
+
     return (
         f"**INTERESSADO:** {meta.get('De', 'Não identificado')}\n"
         f"**DOCUMENTO:** {meta.get('Documento', 'Não identificado')}\n"
         f"**DESTINATÁRIO:** {meta.get('Para', 'Não identificado')}\n"
-        f"**PÁGINAS DE ORIGEM:** Resumo desde passagem pela SETI: {resumo_desde_seti}\n"
-        f"**RESUMO PRINCIPAL:** {resumo_final}\n"
+        f"**RESUMO PRINCIPAL:** {resumo_final}\n\nResumo desde passagem pela SETI: {resumo_desde_seti}\n"
         f"**INCONSISTÊNCIAS IDENTIFICADAS:**\nDesde a SETI: {inconsistencias_seti}\nGerais: {inconsistencias_resultado}\n\n"
         f"**DETALHAMENTO POR BLOCOS:**\n{resumo_eventos_str}"
-    ), dados_extras, caminho_events_txt, debug_texto_blocos
+    ), dados_extras, caminho_events_txt, debug_texto_blocos, corpo_resposta, meta

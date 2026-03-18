@@ -13,7 +13,6 @@ def extrair_timeline_protocolo(caminho_pdf):
             
         evento_str = None
         
-        # 1. TENTA IDENTIFICAR E-MAIL
         remetente_m = re.search(r'(?i)Remetente:\s*([^\n]+)', texto)
         data_email_m = re.search(r'(?i)Data:\s*(\d{2}/\d{2}/\d{4}.*?)(?=\n|$)', texto)
         para_m = re.search(r'(?i)Para:\s*([^\n]+)', texto)
@@ -25,7 +24,6 @@ def extrair_timeline_protocolo(caminho_pdf):
             evento_str = f"E-MAIL | DE: {remetente} -> PARA: {para} (Data: {data_email})"
             
         else:
-            # 2. TENTA IDENTIFICAR PADRÃO OFICIAL
             regex_titulo = re.compile(r'^\s*((?:DESPACHO|INFORMAÇÃO TÉCNICA|SOLICITAÇÃO|PARECER|OFÍCIO|MEMO(?:RANDO)?|ANEXO)[^\n]{0,80})$', re.MULTILINE | re.IGNORECASE)
             titulos = [re.sub(r'\s+', ' ', m.group(1).strip()).upper() for m in regex_titulo.finditer(texto)]
             tipo_doc = titulos[0] if titulos else ""
@@ -56,13 +54,13 @@ def extrair_timeline_protocolo(caminho_pdf):
                 evento_str = f"{evento_desc}{detalhes_atores} (Data: {data_evento})"
 
         if evento_str:
-            # Armazena o número da página para que a IA possa ler o conteúdo depois
             timeline.append({
                 "pagina": num_pagina,
                 "evento_str": evento_str
             })
 
     return timeline
+
 def gerar_arquivo_eventos(timeline, diretorio_saida="output_pdfs"):
     os.makedirs(diretorio_saida, exist_ok=True)
     caminho_txt = os.path.join(diretorio_saida, "events.txt")
@@ -76,8 +74,6 @@ def gerar_arquivo_eventos(timeline, diretorio_saida="output_pdfs"):
                 f.write(f"{evento}\n")
                 
     return caminho_txt
-
-
 
 def extrair_texto_bruto_pdf(caminho_pdf):
     doc = fitz.open(caminho_pdf)
@@ -94,9 +90,17 @@ def limpar_texto_para_ia(texto):
 
 def extrair_metadados_protocolo(texto_bruto):
     metadados = {"Para": "N/A", "De": "N/A", "Documento": "N/A", "Assunto": "N/A"}
+    
     m_para = re.search(r'(?i)(?:Para:|Ao\s+Sr\.?|À\s+Sra\.?|Ao\s+Senhor|À\s+Senhora)\s*:?\s*\n?\s*([^\n]+)', texto_bruto)
     if m_para: 
         metadados["Para"] = m_para.group(1).strip()
+        
+    m_assunto = re.search(r'(?i)\bAssunto\s*:?\s*([^\n]+)', texto_bruto)
+    if m_assunto:
+        texto_assunto = m_assunto.group(1).strip()
+        texto_assunto = re.sub(r'[:_\-\.]+$', '', texto_assunto).strip()
+        if len(texto_assunto) > 3:
+            metadados["Assunto"] = texto_assunto
         
     m_de = re.search(r'(?i)\b(?:De|Interessado\s*1?):\s*([\s\S]*?)(?=\n\s*(?:Para|Assunto|Data|Referência|Protocolo|Interessado|Telefone|E-?mail):|\n\s*\n|$)', texto_bruto)
     if m_de: 
@@ -109,7 +113,6 @@ def extrair_metadados_protocolo(texto_bruto):
             texto_de = re.sub(r'(?i)\(?(?:CNPJ|CPF|RG)\s*:\s*[\d\.\-\/Xx]+\)?', '', texto_de).strip()
         
         texto_de = re.sub(r'(?i)\b(?:Interessado|Telefone|E-?mail)\b.*', '', texto_de).strip()
-        
         texto_de = re.sub(r'^[-–\s]+|[-–\s]+$', '', texto_de).strip()
         metadados["De"] = texto_de
             
