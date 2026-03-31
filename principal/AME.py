@@ -110,7 +110,7 @@ def avaliar_e_justificar_ocr(resumo_original, dados_extras):
     prompt = (
         f"<|user|>\n"
         f"Você possui o RESUMO PRINCIPAL de um documento e DADOS EXTRAS extraídos de tabelas e imagens anexas.\n"
-        f"REGRAS OBRIGATÓRIAS: RESPONDA EXCLUSIVAMENTE EM PORTUGUÊS DO BRASIL. NÃO USE OUTROS IDIOMAS.\n"
+        f"REGRAS OBRIGATÓRIAS: RESPONDA EXCLUSIVAMENTE EM PORTUGUÊS DO BRASIL. NÃO USE OUTROS IDIOMAS. NÃO INVENTE PALAVRAS. USE A NORMA CULTA.\n"
         f"Se os DADOS EXTRAS não adicionarem informações úteis de valores, empresas ou quantitativos ao resumo, responda APENAS com a palavra 'IRRELEVANTE'.\n"
         f"Se os DADOS EXTRAS contiverem valores financeiros, quantidades importantes ou dados técnicos pertinentes, crie UMA ÚNICA FRASE como justificativa ou complemento ao resumo principal.\n\n"
         f"RESUMO PRINCIPAL: {resumo_original}\n\n"
@@ -123,7 +123,7 @@ def gerar_resumo_phi(texto_limpo):
     prompt = (
         f"<|user|>\n"
         f"Você é um assistente administrativo da SETI/PR. Sua tarefa é ler o documento abaixo e responder EXCLUSIVAMENTE em Português do Brasil.\n"
-        f"Regra: Escreva uma única frase direta e completa. Não invente campos extras. NÃO USE OUTROS IDIOMAS.\n\n"
+        f"Regra: Escreva uma única frase direta e completa. Não invente campos extras ou palavras inexistentes (neologismos). NÃO USE OUTROS IDIOMAS.\n\n"
         f"TEXTO PARA ANALISAR:\n"
         f"### INÍCIO ###\n{texto_limpo[:1500]}\n### FIM ###\n<|end|>\n"
         f"<|assistant|>\n"
@@ -227,6 +227,7 @@ def processar_documento_final(caminho_pdf):
     inconsistencias_seti = "Sem inconsistências."
     decisao_dg = "Nenhuma manifestação da Diretoria Geral encontrada."
     debug_texto_blocos = "=== DEBUG DE TEXTOS E PROMPTS ENVIADOS PARA A IA ===\n\n"
+    resultado_calculos = "Nenhum cálculo exato a ser analisado."
     
     if movimentacoes:
         blocos = []
@@ -241,7 +242,7 @@ def processar_documento_final(caminho_pdf):
                 f"REGRAS DE SEGURANÇA:\n"
                 f"1. RESPONDA EXCLUSIVAMENTE EM PORTUGUÊS DO BRASIL. NÃO USE ESPANHOL OU INGLÊS.\n"
                 f"2. Extraia EXCLUSIVAMENTE as informações contidas no texto. Se algo não constar, escreva 'Não informado'.\n"
-                f"3. NUNCA invente nomes, dados financeiros, leis, políticos ou fatos externos ao documento.\n"
+                f"3. NUNCA invente nomes, dados financeiros, leis, políticos, fatos externos ao documento ou palavras inexistentes.\n"
                 f"4. O resumo deve ter no máximo 3 frases, focando puramente na ação administrativa solicitada.\n\n"
                 f"Responda estritamente neste formato:\n"
                 f"- **Tipo de Documento:**\n"
@@ -311,6 +312,7 @@ def processar_documento_final(caminho_pdf):
             f"<|user|>\nResuma o que aconteceu no processo desde que ele passou pela SETI pela última vez.\n"
             f"REGRAS OBRIGATÓRIAS:\n"
             f"- RESPONDA EXCLUSIVAMENTE EM PORTUGUÊS DO BRASIL. NÃO USE ESPANHOL OU INGLÊS.\n"
+            f"- USE A NORMA CULTA DO PORTUGUÊS. NÃO INVENTE PALAVRAS.\n"
             f"- Escreva um ÚNICO parágrafo contínuo e direto.\n"
             f"- NÃO use tópicos, hifens ou quebras de linha.\n\n"
             f"TEXTO:\n{texto_pos_seti[:3000]}\n<|end|>\n<|assistant|>\n"
@@ -321,7 +323,7 @@ def processar_documento_final(caminho_pdf):
             f"<|user|>\nExistem erros de fluxo ou datas contraditórias especificamente neste trecho final (após passar pela SETI)?\n"
             f"TEXTO:\n{texto_pos_seti[:3000]}\n"
             f"REGRAS OBRIGATÓRIAS:\n"
-            f"- RESPONDA EXCLUSIVAMENTE EM PORTUGUÊS DO BRASIL. NÃO USE OUTROS IDIOMAS.\n"
+            f"- RESPONDA EXCLUSIVAMENTE EM PORTUGUÊS DO BRASIL. NÃO INVENTE PALAVRAS.\n"
             f"- Se não houver, responda apenas 'Fluxo recente íntegro'.\n"
             f"- Se houver, descreva em um ÚNICO parágrafo, sem tópicos ou quebras de linha.\n<|end|>\n<|assistant|>\n"
         )
@@ -335,7 +337,7 @@ def processar_documento_final(caminho_pdf):
             f"2. **Contradição:** Conflitos envolvendo pedidos, remetentes ou destinatários.\n"
             f"3. **Ruptura de Fluxo:** Saltos entre órgãos ou pessoas que não fazem sentido administrativo.\n\n"
             f"LINHA DO TEMPO DAS MOVIMENTAÇÕES:\n{texto_todos_resumos[:3500]}\n\n"
-            f"REGRAS OBRIGATÓRIAS: RESPONDA EXCLUSIVAMENTE EM PORTUGUÊS DO BRASIL. NÃO USE ESPANHOL.\n"
+            f"REGRAS OBRIGATÓRIAS: RESPONDA EXCLUSIVAMENTE EM PORTUGUÊS DO BRASIL. USE A NORMA CULTA E NÃO INVENTE PALAVRAS.\n"
             f"Se não houver erros, responda: 'Fluxo processual íntegro.'\n"
             f"Se houver erros, descreva-os de forma técnica e breve.\n<|end|>\n"
             f"<|assistant|>\n"
@@ -346,12 +348,29 @@ def processar_documento_final(caminho_pdf):
             f"<|user|>\nProcure na linha do tempo abaixo a ÚLTIMA manifestação, decisão ou parecer da 'Assessoria do DG', 'Assessoria da Diretoria Geral' ou 'Diretoria Geral'.\n"
             f"TEXTO:\n{texto_todos_resumos[:3500]}\n\n"
             f"REGRAS OBRIGATÓRIAS:\n"
-            f"- RESPONDA EXCLUSIVAMENTE EM PORTUGUÊS DO BRASIL.\n"
+            f"- RESPONDA EXCLUSIVAMENTE EM PORTUGUÊS DO BRASIL. NÃO INVENTE PALAVRAS.\n"
             f"- Se não houver, responda apenas 'Nenhuma manifestação da Diretoria Geral encontrada.'\n"
             f"- Se houver, resuma a última decisão em uma única frase clara.\n<|end|>\n"
             f"<|assistant|>\n"
         )
         decisao_dg = chamar_llm_api(prompt_decisao_dg, 200, 0.1, False).replace('\n', ' ').strip()
+
+        prompt_calculos = (
+            f"<|user|>\n"
+            f"Você é um auditor financeiro. Busque APENAS por relações matemáticas de compra nos dados abaixo.\n"
+            f"REGRAS OBRIGATÓRIAS:\n"
+            f"1. RESPONDA EM PORTUGUÊS DO BRASIL. NÃO INVENTE PALAVRAS OU NEOLOGISMOS.\n"
+            f"2. Localize estritamente três informações: Quantidade, Valor Unitário e Valor Total.\n"
+            f"3. Refaça a matemática (Multiplique a Quantidade pelo Valor Unitário).\n"
+            f"4. Se encontrar os dados, responda rigorosamente neste formato: 'Foi informado a compra de [Quantidade] itens por R$ [Valor Unitário], totalizando R$ [Valor Total]. O cálculo refeito resulta em R$ [Seu Resultado]. [Cálculo correto / ERRO MATEMÁTICO: diferença de X].'\n"
+            f"5. Se os dados exatos (Quantidade E Valor Unitário) não existirem claramente, responda APENAS: 'Nenhum cálculo exato a ser analisado.'\n\n"
+            f"DADOS:\n{texto_tabelas[:1500]}\n{texto_ocr[:1000]}\n{corpo_limpo[:1500]}\n"
+            f"<|end|>\n<|assistant|>\n"
+        )
+        resultado_calculos = chamar_llm_api(prompt_calculos, 200, 0.1, False).strip()
+        
+        if 'ERRO MATEMÁTICO:' in resultado_calculos.upper():
+            inconsistencias_resultado += f"\nErros de Cálculo Encontrados: {resultado_calculos}"
 
     caminho_events_txt = gerar_arquivo_eventos(timeline_para_txt if movimentacoes else [])
     dados_extras = f"--- DADOS DE TABELAS ---\n{texto_tabelas}\n\n--- DADOS DE IMAGENS ---\n{texto_ocr}"
@@ -373,22 +392,23 @@ def processar_documento_final(caminho_pdf):
         f"ÚLTIMO PARECER DA DIRETORIA GERAL (DG): {decisao_dg}\n\n"
         f"REGRAS OBRIGATÓRIAS DE ESTRUTURA E SEGURANÇA:\n"
         f"1. APENAS O TEXTO DO CORPO. SEM cabeçalho, SEM saudação, SEM data, SEM assinatura.\n"
-        f"2. O texto DEVE conter EXATAMENTE 3 parágrafos e NENHUM TÓPICO.\n"
+        f"2. O texto DEVE conter EXATAMENTE 2 parágrafos e NENHUM TÓPICO.\n"
         f"3. O 1º parágrafo deve ser um resumo do processo inteiro, de forma clara e objetiva.\n"
         f"4. O 2º parágrafo deve ser um resumo unificado das inconsistências encontradas e mencionar explicitamente o último parecer da Diretoria Geral.\n"
-        f"5. O 3º parágrafo deve ser um texto de encaminhamento solicitando as devidas providências, terminando encaminhando para o setor '[INSERIR AQUI]'.\n"
-        f"6. NUNCA invente justificativas, nomes ou fatos.\n"
-        f"7. Idioma: Português do Brasil.\n"
+        f"5. NUNCA invente justificativas, nomes, fatos ou palavras (neologismos). Use estritamente a gramática e norma culta.\n"
+        f"6. Idioma: Português do Brasil.\n"
         f"<|end|>\n"
         f"<|assistant|>\n"
     )
     corpo_resposta = chamar_llm_api(prompt_resposta, 600, 0.1, False).strip()
+    corpo_resposta += "\n\nO setor [INSIRA AQUI] declara que [INSIRA AQUI] e encaminha esse protocolo para [INSIRA AQUI]."
 
     return (
         f"**INTERESSADO:** {meta.get('De', 'Não identificado')}\n"
         f"**DOCUMENTO:** {meta.get('Documento', 'Não identificado')}\n"
         f"**DESTINATÁRIO:** {meta.get('Para', 'Não identificado')}\n"
         f"**RESUMO PRINCIPAL:** {resumo_final}\n\nResumo desde passagem pela SETI: {resumo_desde_seti}\n"
+        f"**ANÁLISE DE CÁLCULOS:** {resultado_calculos}\n"
         f"**INCONSISTÊNCIAS IDENTIFICADAS:**\nDesde a SETI: {inconsistencias_seti}\nGerais: {inconsistencias_resultado}\n\n"
         f"**DETALHAMENTO POR BLOCOS:**\n{resumo_eventos_str}"
     ), dados_extras, caminho_events_txt, debug_texto_blocos, corpo_resposta, meta

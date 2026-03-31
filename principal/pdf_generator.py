@@ -72,7 +72,7 @@ class PDFGenerator:
         result_text = re.sub(r'(?i)\*?\*?\s*DETALHAMENTO POR BLOCOS\s*\*?\*?[\s:\-]*', '', result_text).strip()
         
         pattern = re.compile(
-            r'(?:^|\n)\s*\*\*\s*(INTERESSADO|DOCUMENTO|DESTINATÁRIO|RESUMO PRINCIPAL|INCONSISTÊNCIAS IDENTIFICADAS|Pág.*?\|\s*Movimentação.*?)\s*:?\s*\*\*(?:\s*:)?',
+            r'(?:^|\n)\s*\*\*\s*(INTERESSADO|DOCUMENTO|DESTINATÁRIO|RESUMO PRINCIPAL|ANÁLISE DE CÁLCULOS|INCONSISTÊNCIAS IDENTIFICADAS|Pág.*?\|\s*Movimentação.*?)\s*:?\s*\*\*(?:\s*:)?',
             re.IGNORECASE
         )
         
@@ -150,9 +150,9 @@ class PDFGenerator:
         
         ano_atual = datetime.now().year
         num_memo = codigo_rastreio[:4].upper() if codigo_rastreio else "0000"
-        elements.append(Paragraph(f"Memo n.º {num_memo}/{ano_atual}/SETI-NAS", memo_style))
+        elements.append(Paragraph(f"Memo n.º {num_memo}/{ano_atual}/SETI-<b>[INSIRA AQUI]</b>", memo_style))
         
-        para_nome = "[INSERIR AQUI]"
+        para_nome = "<b>[INSIRA AQUI]</b>"
         
         assunto_bruto = meta.get('Assunto', '').strip()
         assunto_limpo = re.sub(r'[:_\-\.]+$', '', assunto_bruto).strip()
@@ -170,7 +170,8 @@ class PDFGenerator:
         elements.append(Paragraph("Senhor(a),", memo_style))
         
         if corpo_resposta:
-            for p in corpo_resposta.split('\n'):
+            corpo_formatado = corpo_resposta.replace('[INSERIR AQUI]', '<b>[INSIRA AQUI]</b>').replace('[INSIRA AQUI]', '<b>[INSIRA AQUI]</b>')
+            for p in corpo_formatado.split('\n'):
                 if p.strip():
                     elements.append(Paragraph(p.strip(), memo_indent))
         
@@ -184,7 +185,7 @@ class PDFGenerator:
         elements.append(Spacer(1, 20*mm))
         
         elements.append(Paragraph(username.upper() if username else "USUÁRIO", memo_center_bold))
-        elements.append(Paragraph("[INSERIR AQUI]/Seti", memo_center))
+        elements.append(Paragraph("<b>[INSIRA AQUI]</b>/Seti", memo_center))
 
         doc.build(elements, onFirstPage=self._add_page_header, onLaterPages=self._add_page_header)
         return caminho_pdf

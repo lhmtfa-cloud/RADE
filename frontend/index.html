@@ -47,9 +47,15 @@
       <div id="statusText">Aguardando...</div>
     </div>
 
-    <div id="downloadContainer" class="hidden">
-      <a id="downloadLink" href="#" download>
-          <i class="fas fa-download" style="margin-right: 8px;"></i> Baixar Resultado
+    <div id="downloadContainer" class="hidden" style="display: flex; gap: 10px; justify-content: center; margin-top: 2rem; flex-wrap: wrap;">
+      <a id="downloadPdfLink" href="#" class="btn-download" style="background-color: var(--success-color);">
+          <i class="fas fa-file-pdf"></i> Análise (PDF)
+      </a>
+      <a id="downloadWordLink" href="#" class="btn-download" style="background-color: #2563eb;">
+          <i class="fas fa-file-word"></i> Esboço (Word)
+      </a>
+      <a id="downloadZipLink" href="#" class="btn-download hidden" style="background-color: #4b5563;">
+          <i class="fas fa-file-archive"></i> Tudo (ZIP)
       </a>
     </div>
 

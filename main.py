@@ -16,6 +16,7 @@ from datetime import datetime
 sys.path.append(os.path.join(os.path.dirname(__file__), "principal"))
 from principal.AME import processar_documento_final
 from principal.pdf_generator import PDFGenerator
+from principal.word_generator import WordGenerator
 
 app = FastAPI()
 
@@ -179,13 +180,18 @@ def tarefa_em_background(tracking_code: str, file_path: str, filename: str, user
         log_messages.append(f"[{datetime.now().isoformat()}] Resumo gerado e OCR extraído com sucesso.")
         
         jobs[tracking_code]["status"] = "generating_pdf"
-        gerador = PDFGenerator(output_dir=PDF_DIR)
-        caminho_pdf = gerador.create_summary_pdf(texto_resultado, tracking_code, username, corpo_resposta, meta)
         
-        log_messages.append(f"[{datetime.now().isoformat()}] PDF gerado com sucesso.")
+        gerador_pdf = PDFGenerator(output_dir=PDF_DIR)
+        caminho_pdf = gerador_pdf.create_summary_pdf(texto_resultado, tracking_code, username, corpo_resposta, meta)
+        
+        gerador_word = WordGenerator(output_dir=PDF_DIR)
+        caminho_word = gerador_word.create_summary_word(texto_resultado, tracking_code, username, corpo_resposta, meta)
+        
+        log_messages.append(f"[{datetime.now().isoformat()}] Arquivos PDF e Word gerados com sucesso.")
         
         jobs[tracking_code]["status"] = "finished"
         jobs[tracking_code]["pdf_path"] = caminho_pdf
+        jobs[tracking_code]["word_path"] = caminho_word
         jobs[tracking_code]["ocr_path"] = ocr_path
         jobs[tracking_code]["log_path"] = log_path
         jobs[tracking_code]["events_path"] = caminho_events_txt
@@ -217,7 +223,7 @@ async def upload_pdf(background_tasks: BackgroundTasks, file: UploadFile = File(
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
         
-    jobs[tracking_code] = {"status": "preparing", "pdf_path": None, "original_path": file_path, "owner": current_user["username"]}
+    jobs[tracking_code] = {"status": "preparing", "pdf_path": None, "word_path": None, "original_path": file_path, "owner": current_user["username"]}
     
     background_tasks.add_task(tarefa_em_background, tracking_code, file_path, file.filename, current_user["username"])
     return {"tracking_code": tracking_code}
@@ -238,12 +244,21 @@ async def download_pdf(code: str, current_user: dict = Depends(get_current_user)
         raise HTTPException(status_code=403, detail="Acesso negado")
     return FileResponse(jobs[code]["pdf_path"], media_type='application/pdf', filename=f"resumo_{code}.pdf")
 
+@app.get("/download/word/{code}")
+async def download_word(code: str, current_user: dict = Depends(get_current_user)):
+    if code not in jobs or jobs[code]["status"] != "finished":
+        raise HTTPException(status_code=400, detail="Não concluído")
+    if jobs[code].get("owner") != current_user["username"] and current_user["role"] not in ["admin", "superuser"]:
+        raise HTTPException(status_code=403, detail="Acesso negado")
+    return FileResponse(jobs[code]["word_path"], media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document', filename=f"esboco_{code}.docx")
+
 @app.get("/download/zip/{code}")
 async def download_zip(code: str, admin: dict = Depends(get_current_admin)):
     if code not in jobs or jobs[code]["status"] != "finished":
         raise HTTPException(status_code=400, detail="Não concluído")
     
     pdf_path = jobs[code]["pdf_path"]
+    word_path = jobs[code].get("word_path")
     original_path = jobs[code].get("original_path") 
     ocr_path = jobs[code].get("ocr_path")
     log_path = jobs[code].get("log_path")
@@ -256,6 +271,9 @@ async def download_zip(code: str, admin: dict = Depends(get_current_admin)):
     with zipfile.ZipFile(zip_path, 'w') as zipf:
         if pdf_path and os.path.exists(pdf_path):
             zipf.write(pdf_path, f"resumo_{code}.pdf")
+            
+        if word_path and os.path.exists(word_path):
+            zipf.write(word_path, f"esboco_{code}.docx")
             
         if original_path and os.path.exists(original_path):
             zipf.write(original_path, os.path.basename(original_path))

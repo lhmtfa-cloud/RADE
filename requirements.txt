@@ -13,3 +13,4 @@ requests
 sse-starlette
 starlette-context
 pydantic-settings
+python-docx

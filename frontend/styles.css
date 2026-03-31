@@ -1,7 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
-  /* Cores Claras */
   --bg-color: #f8fafc;
   --container-bg: #ffffff;
   --text-color: #334155;
@@ -28,7 +27,6 @@
 }
 
 body.dark-mode {
-  /* Cores Escuras */
   --bg-color: #0f172a;
   --container-bg: #1e293b;
   --text-color: #cbd5e1;
@@ -89,7 +87,6 @@ h1 {
   text-align: center;
 }
 
-/* Header / Nav */
 .header-nav {
   display: flex;
   justify-content: space-between;
@@ -111,8 +108,7 @@ h1 {
   gap: 1rem;
 }
 
-/* Botões e Links */
-button, .nav-button, .nav-link, #downloadLink {
+button, .nav-button, .nav-link {
   font-family: 'Inter', sans-serif;
   font-weight: 500;
   border-radius: var(--radius-md);
@@ -181,7 +177,6 @@ button:hover {
   background-color: var(--border-color);
 }
 
-/* Upload Area */
 input[type="file"] {
   display: none;
 }
@@ -211,7 +206,6 @@ input[type="file"] {
   color: var(--primary-color);
 }
 
-/* Forms */
 .form-group {
   margin-bottom: 1.2rem;
   width: 100%;
@@ -241,7 +235,6 @@ input[type="file"] {
   outline: none;
 }
 
-/* Progress & Status */
 .progress-container {
   background: var(--input-bg);
   padding: 1.5rem;
@@ -252,7 +245,7 @@ input[type="file"] {
   width: 100%;
 }
 
-.progress-container.hidden, #downloadContainer.hidden, #cancel-button.hidden {
+.progress-container.hidden, #downloadContainer.hidden, #cancel-button.hidden, .btn-download.hidden {
   display: none !important;
 }
 
@@ -281,23 +274,26 @@ progress::-webkit-progress-value {
   color: var(--input-text);
 }
 
-/* Download Link */
-#downloadContainer {
-  margin-top: 2rem;
-  text-align: center;
-}
-
-#downloadLink {
-  background-color: var(--success-color);
+.btn-download {
   color: white;
-  padding: 0.75rem 2rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  font-family: 'Inter', sans-serif;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  box-shadow: var(--shadow-sm);
 }
 
-#downloadLink:hover {
-  background-color: var(--success-hover);
+.btn-download:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
-/* Tabelas (Admin e Histórico) */
 section h2 {
   font-size: 1.2rem;
   border-bottom: 1px solid var(--border-color);
@@ -340,7 +336,6 @@ tbody tr:hover {
   background-color: var(--input-bg);
 }
 
-/* Tabela Específica - Ações Admin */
 td button, td select {
   padding: 0.4rem 0.8rem;
   font-size: 0.85rem;
@@ -370,7 +365,6 @@ td button, td select {
   text-decoration: underline;
 }
 
-/* Modal */
 #settings-modal {
   display: none;
   position: fixed;
@@ -411,7 +405,6 @@ td button, td select {
   color: var(--danger-color);
 }
 
-/* Switch (Toggle) */
 .settings-row {
   display: flex;
   justify-content: space-between;
@@ -461,7 +454,6 @@ input:checked + .slider:before {
   transform: translateX(22px);
 }
 
-/* Footer */
 footer {
   margin-top: auto;
   padding: 2rem 0 1rem 0;
@@ -477,7 +469,6 @@ footer {
   text-align: center;
 }
 
-/* Ajustes Formulário Criação Usuário (Admin) */
 #create-user-form {
   display: flex;
   flex-wrap: wrap;
