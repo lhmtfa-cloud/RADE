@@ -131,6 +131,16 @@ def gerar_resumo_phi(texto_limpo):
     )
     return chamar_llm_api(prompt, max_tokens=200, temperature=0.1, usar_cpu=False)
 
+def gerar_assunto_curto_ia(resumo):
+    prompt = (
+        f"<|user|>\n"
+        f"Leia o resumo abaixo e defina um 'Assunto' oficial e extremamente curto (no máximo 5 palavras) para um documento.\n"
+        f"Responda APENAS com o texto do assunto, sem aspas, sem introduções.\n\n"
+        f"RESUMO: {resumo}\n<|end|>\n"
+        f"<|assistant|>\n"
+    )
+    return chamar_llm_api(prompt, max_tokens=20, temperature=0.1, usar_cpu=False)
+
 def localizar_paginas_referencia(caminho_pdf, resumo_ia):
     doc = fitz.open(caminho_pdf)
     palavras_chave = [w for w in resumo_ia.lower().split() if len(w) > 5] 
@@ -381,27 +391,47 @@ def processar_documento_final(caminho_pdf):
         if "IRRELEVANTE" not in analise_complementar.upper():
             resumo_final = f"{resumo_ia} {analise_complementar}"
 
+    meta['Assunto_IA'] = gerar_assunto_curto_ia(resumo_final)
+
     resumo_eventos_str = "\n".join(eventos_resumidos) if movimentacoes and eventos_resumidos else "Nenhuma movimentação detalhada encontrada."
     doc_leitura.close()
 
     prompt_resposta = (
         f"<|user|>\n"
-        f"Redija o corpo de um ofício/memorando interno baseado no processo atual.\n\n"
-        f"RESUMO DO PROCESSO: {resumo_final}\n"
-        f"INCONSISTÊNCIAS IDENTIFICADAS: {inconsistencias_resultado} | {inconsistencias_seti}\n"
-        f"ÚLTIMO PARECER DA DIRETORIA GERAL (DG): {decisao_dg}\n\n"
-        f"REGRAS OBRIGATÓRIAS DE ESTRUTURA E SEGURANÇA:\n"
-        f"1. APENAS O TEXTO DO CORPO. SEM cabeçalho, SEM saudação, SEM data, SEM assinatura.\n"
-        f"2. O texto DEVE conter EXATAMENTE 2 parágrafos e NENHUM TÓPICO.\n"
-        f"3. O 1º parágrafo deve ser um resumo do processo inteiro, de forma clara e objetiva.\n"
-        f"4. O 2º parágrafo deve ser um resumo unificado das inconsistências encontradas e mencionar explicitamente o último parecer da Diretoria Geral.\n"
-        f"5. NUNCA invente justificativas, nomes, fatos ou palavras (neologismos). Use estritamente a gramática e norma culta.\n"
-        f"6. Idioma: Português do Brasil.\n"
+        f"Redija o resumo de um processo administrativo com base nos dados extraídos.\n\n"
+        f"RESUMO GERAL: {resumo_final}\n\n"
+        f"HISTÓRICO DE MOVIMENTAÇÕES:\n{resumo_eventos_str}\n\n"
+        f"VALORES E CÁLCULOS ENCONTRADOS:\n{resultado_calculos}\n\n"
+        f"INCONSISTÊNCIAS: {inconsistencias_resultado} | {inconsistencias_seti}\n"
+        f"PARECER DA DIRETORIA GERAL: {decisao_dg}\n\n"
+        f"REGRAS OBRIGATÓRIAS:\n"
+        f"1. RESPONDA EXATAMENTE COM 2 BLOCOS: use os marcadores 'PARTE_1:' e 'PARTE_2:'.\n"
+        f"2. PARTE_1: Um parágrafo resumindo o processo (OBRIGATÓRIO incluir o valor total da compra listado nos CÁLCULOS).\n"
+        f"3. PARTE_2: Um parágrafo relatando as inconsistências e o parecer da Diretoria Geral.\n"
+        f"4. NÃO crie outras partes. PARE DE ESCREVER após concluir a PARTE_2.\n"
+        f"5. Use Norma Culta. PROIBIDO inventar palavras.\n"
         f"<|end|>\n"
         f"<|assistant|>\n"
     )
-    corpo_resposta = chamar_llm_api(prompt_resposta, 600, 0.1, False).strip()
-    corpo_resposta += "\n\nO setor [INSIRA AQUI] declara que [INSIRA AQUI] e encaminha esse protocolo para [INSIRA AQUI]."
+    corpo_raw = chamar_llm_api(prompt_resposta, 400, 0.1, False).strip()
+    
+    p1 = resumo_final
+    p2 = f"Análise de inconsistências: {inconsistencias_resultado} Parecer DG: {decisao_dg}"
+    
+    match_p1 = re.search(r'PARTE_1:(.*?)(?=PARTE_2:|$)', corpo_raw, re.DOTALL)
+    if match_p1:
+        texto_p1 = match_p1.group(1).replace('\n', ' ').strip()
+        if texto_p1: p1 = texto_p1
+
+    match_p2 = re.search(r'PARTE_2:(.*?)(?=PARTE_3:|PARTE 3|III\.|$)', corpo_raw, re.DOTALL)
+    if match_p2:
+        texto_p2 = match_p2.group(1).replace('\n', ' ').strip()
+        if texto_p2: p2 = texto_p2
+
+    p1 = p1.replace('**', '')
+    p2 = p2.replace('**', '')
+    
+    corpo_resposta = f"I. {p1}\nII. {p2}\nIII. O setor [INSIRA AQUI] declara que [INSIRA AQUI] e encaminha esse protocolo para [INSIRA AQUI]."
 
     return (
         f"**INTERESSADO:** {meta.get('De', 'Não identificado')}\n"

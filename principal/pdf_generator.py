@@ -7,7 +7,7 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from reportlab.lib.units import mm
-from reportlab.lib.enums import TA_LEFT, TA_CENTER
+from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_JUSTIFY
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.utils import ImageReader
@@ -119,7 +119,7 @@ class PDFGenerator:
         styles['value_style'] = ParagraphStyle(name='ValueStyle', parent=base_style, alignment=TA_LEFT)
         
         memo_style = ParagraphStyle(name='MemoStyle', parent=base_style, alignment=TA_LEFT, spaceAfter=12)
-        memo_indent = ParagraphStyle(name='MemoIndent', parent=base_style, alignment=TA_LEFT, spaceAfter=12, firstLineIndent=20)
+        memo_indent = ParagraphStyle(name='MemoIndent', parent=base_style, alignment=TA_JUSTIFY, spaceAfter=12, leftIndent=28, bulletIndent=0)
         memo_center = ParagraphStyle(name='MemoCenter', parent=base_style, alignment=TA_CENTER, spaceAfter=5)
         memo_center_bold = ParagraphStyle(name='MemoCenterBold', parent=base_style, fontName=FONT_FAMILY_BOLD, alignment=TA_CENTER, spaceAfter=2)
 
@@ -154,14 +154,7 @@ class PDFGenerator:
         
         para_nome = "<b>[INSIRA AQUI]</b>"
         
-        assunto_bruto = meta.get('Assunto', '').strip()
-        assunto_limpo = re.sub(r'[:_\-\.]+$', '', assunto_bruto).strip()
-        
-        palavras_ignoradas = ["n/a", "detalhamento", "assunto", ""]
-        if not assunto_limpo or assunto_limpo.lower() in palavras_ignoradas:
-            assunto_final = 'Documento Oficial'
-        else:
-            assunto_final = assunto_limpo
+        assunto_final = meta.get('Assunto_IA', 'Documento Oficial').strip()
             
         elements.append(Paragraph(f"Para: {para_nome}", memo_style))
         elements.append(Paragraph(f"Assunto: {assunto_final}", memo_style))
@@ -173,7 +166,12 @@ class PDFGenerator:
             corpo_formatado = corpo_resposta.replace('[INSERIR AQUI]', '<b>[INSIRA AQUI]</b>').replace('[INSIRA AQUI]', '<b>[INSIRA AQUI]</b>')
             for p in corpo_formatado.split('\n'):
                 if p.strip():
-                    elements.append(Paragraph(p.strip(), memo_indent))
+                    match = re.match(r'^(I|II|III)\.\s+(.*)', p.strip())
+                    if match:
+                        p_text = f"<bullet>{match.group(1)}.</bullet>{match.group(2)}"
+                        elements.append(Paragraph(p_text, memo_indent))
+                    else:
+                        elements.append(Paragraph(p.strip(), memo_indent))
         
         elements.append(Spacer(1, 15*mm))
         

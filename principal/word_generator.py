@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from docx import Document
 from docx.shared import Pt, Inches
-from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_TAB_ALIGNMENT
 
 class WordGenerator:
     def __init__(self, output_dir="output_docs"):
@@ -38,13 +38,7 @@ class WordGenerator:
         p_para.add_run("[INSIRA AQUI]").bold = True
         p_para.paragraph_format.space_after = Pt(12)
         
-        assunto_bruto = meta.get('Assunto', '').strip()
-        assunto_limpo = re.sub(r'[:_\-\.]+$', '', assunto_bruto).strip()
-        palavras_ignoradas = ["n/a", "detalhamento", "assunto", ""]
-        if not assunto_limpo or assunto_limpo.lower() in palavras_ignoradas:
-            assunto_final = 'Documento Oficial'
-        else:
-            assunto_final = assunto_limpo
+        assunto_final = meta.get('Assunto_IA', 'Documento Oficial').strip()
             
         p_assunto = doc.add_paragraph(f"Assunto: {assunto_final}")
         p_assunto.paragraph_format.space_after = Pt(24)
@@ -59,10 +53,19 @@ class WordGenerator:
                 if linha.strip():
                     p_corpo = doc.add_paragraph()
                     p_corpo.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
-                    p_corpo.paragraph_format.first_line_indent = Inches(0.5)
+                    p_corpo.paragraph_format.left_indent = Pt(28)
+                    p_corpo.paragraph_format.first_line_indent = Pt(-28)
                     p_corpo.paragraph_format.space_after = Pt(12)
                     
-                    partes = linha.split('[INSIRA AQUI]')
+                    tab_stops = p_corpo.paragraph_format.tab_stops
+                    tab_stops.add_tab_stop(Pt(28), WD_TAB_ALIGNMENT.LEFT)
+                    
+                    linha_limpa = linha.strip()
+                    match = re.match(r'^(I|II|III)\.\s+(.*)', linha_limpa)
+                    if match:
+                        linha_limpa = f"{match.group(1)}.\t{match.group(2)}"
+                    
+                    partes = linha_limpa.split('[INSIRA AQUI]')
                     for idx, parte in enumerate(partes):
                         p_corpo.add_run(parte)
                         if idx < len(partes) - 1:

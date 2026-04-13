@@ -14,3 +14,4 @@ sse-starlette
 starlette-context
 pydantic-settings
 python-docx
+pycryptodome

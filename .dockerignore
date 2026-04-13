@@ -19,6 +19,7 @@
 **/*.pyd
 .db
 .sqlite3
+.json
 
 # Ignora pastas de bibliotecas ou dados que sobraram
 phiC/

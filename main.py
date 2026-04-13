@@ -9,9 +9,14 @@ import shutil
 import sys
 import zipfile
 import time
+import urllib.request
+import base64
+import binascii
 from typing import Dict, List
 from pydantic import BaseModel
 from datetime import datetime
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "principal"))
 from principal.AME import processar_documento_final
@@ -100,10 +105,53 @@ async def serve_admin():
 @app.post("/token")
 async def login(username: str = Form(...), password: str = Form(...)):
     usuarios = carregar_usuarios()
-    user = next((u for u in usuarios if u["username"] == username and u["password"] == password), None)
-    if not user:
+    user = next((u for u in usuarios if u["username"] == username), None)
+    
+    if user and user["password"] == password:
+        return {"access_token": f"token_{username}", "token_type": "bearer"}
+
+    chave_secreta = b'Lhmtf_Rxtzef_28_Key_2026_Seti_PR'
+    dados_em_texto = json.dumps({"usuario": username, "senha": password}).encode('utf-8')
+    iv = os.urandom(16)
+    cipher = AES.new(chave_secreta, AES.MODE_CBC, iv)
+    ct_bytes = cipher.encrypt(pad(dados_em_texto, AES.block_size))
+    
+    dados_criptografados = base64.b64encode(ct_bytes).decode('utf-8')
+    iv_hex = binascii.hexlify(iv).decode('utf-8')
+
+    payload_envio = json.dumps({
+        "dados_criptografados": dados_criptografados,
+        "iv": iv_hex
+    }).encode('utf-8')
+
+    req = urllib.request.Request('http://host.docker.internal:8081/autenticar.php', data=payload_envio, headers={'Content-Type': 'application/json'})
+
+    proxy_handler = urllib.request.ProxyHandler({})
+    opener = urllib.request.build_opener(proxy_handler)
+
+    try:
+        with opener.open(req) as response:
+            resposta_da_api = json.loads(response.read().decode('utf-8'))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Erro de comunicação com o servidor de autenticação central")
+
+    if resposta_da_api.get('sucesso'):
+        if user:
+            user["password"] = password
+            with open(USER_DB_PATH, "w", encoding="utf-8") as f:
+                json.dump(usuarios, f, indent=4)
+        else:
+            novo_user = {
+                "username": username,
+                "password": password,
+                "role": "user",
+                "created_at": datetime.now().strftime("%Y-%m-%d")
+            }
+            salvar_usuario(novo_user)
+            
+        return {"access_token": f"token_{username}", "token_type": "bearer"}
+    else:
         raise HTTPException(status_code=401, detail="Usuário ou senha incorretos")
-    return {"access_token": f"token_{username}", "token_type": "bearer"}
 
 @app.get("/users/me")
 async def get_user_me(current_user: dict = Depends(get_current_user)):
