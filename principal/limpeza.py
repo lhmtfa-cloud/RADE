@@ -2,17 +2,26 @@ import fitz
 import re
 import os
 
+def extrair_hash_eprotocolo(texto_bruto):
+    protocolo_pr = re.search(r'(?i)\b(\d{2}\.\d{3}\.\d{3}-\d)\b', texto_bruto)
+    hash_sha = re.search(r'(?i)\b([A-Fa-f0-9]{32,64})\b', texto_bruto)
+    
+    if protocolo_pr:
+        return f"Protocolo PR: {protocolo_pr.group(1)}"
+    elif hash_sha:
+        return f"Hash Validação: {hash_sha.group(1).upper()}"
+    return "Nenhum Hash/Protocolo validado"
+
 def extrair_timeline_protocolo(caminho_pdf):
     doc = fitz.open(caminho_pdf)
     timeline = []
     
     for num_pagina, pagina in enumerate(doc, start=1):
         texto = pagina.get_text("text")
-        if not texto.strip():
+        if not texto.strip() or re.search(r'(?i)\bcancelado\b', texto):
             continue
             
         evento_str = None
-        
         remetente_m = re.search(r'(?i)Remetente:\s*([^\n]+)', texto)
         data_email_m = re.search(r'(?i)Data:\s*(\d{2}/\d{2}/\d{4}.*?)(?=\n|$)', texto)
         para_m = re.search(r'(?i)Para:\s*([^\n]+)', texto)
@@ -22,7 +31,6 @@ def extrair_timeline_protocolo(caminho_pdf):
             data_email = data_email_m.group(1).strip()
             para = para_m.group(1).replace('"', '').strip() if para_m else "N/A"
             evento_str = f"E-MAIL | DE: {remetente} -> PARA: {para} (Data: {data_email})"
-            
         else:
             regex_titulo = re.compile(r'^\s*((?:DESPACHO|INFORMAÇÃO TÉCNICA|SOLICITAÇÃO|PARECER|OFÍCIO|MEMO(?:RANDO)?|ANEXO)[^\n]{0,80})$', re.MULTILINE | re.IGNORECASE)
             titulos = [re.sub(r'\s+', ' ', m.group(1).strip()).upper() for m in regex_titulo.finditer(texto)]
@@ -79,7 +87,9 @@ def extrair_texto_bruto_pdf(caminho_pdf):
     doc = fitz.open(caminho_pdf)
     texto = ""
     for pagina in doc:
-        texto += pagina.get_text("text") + " \n"
+        texto_pagina = pagina.get_text("text")
+        if not re.search(r'(?i)\bcancelado\b', texto_pagina):
+            texto += texto_pagina + " \n"
     return texto
 
 def limpar_texto_para_ia(texto):
@@ -89,7 +99,7 @@ def limpar_texto_para_ia(texto):
     return texto
 
 def extrair_metadados_protocolo(texto_bruto):
-    metadados = {"Para": "N/A", "De": "N/A", "Documento": "N/A", "Assunto": "N/A"}
+    metadados = {"Para": "N/A", "De": "N/A", "Documento": "N/A", "Assunto": "N/A", "Autenticidade": "N/A"}
     
     m_para = re.search(r'(?i)(?:Para:|Ao\s+Sr\.?|À\s+Sra\.?|Ao\s+Senhor|À\s+Senhora)\s*:?\s*\n?\s*([^\n]+)', texto_bruto)
     if m_para: 
@@ -116,6 +126,8 @@ def extrair_metadados_protocolo(texto_bruto):
         texto_de = re.sub(r'^[-–\s]+|[-–\s]+$', '', texto_de).strip()
         metadados["De"] = texto_de
             
+    metadados["Autenticidade"] = extrair_hash_eprotocolo(texto_bruto)
+
     for k, v in metadados.items():
         if len(v) > 250:
             metadados[k] = v[:247] + "..."

@@ -15,3 +15,14 @@ starlette-context
 pydantic-settings
 python-docx
 pycryptodome
+pandas
+openpyxl
+workalendar
+langchain
+langchain-core
+langchain-community
+chromadb
+spacy
+langchain-chroma
+langchain-huggingface
+sentence-transformers
