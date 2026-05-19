@@ -1,31 +1,35 @@
 services:
-  app:
+  app-prod:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: rade-app-prod-image:latest
+    container_name: rade-app-prod
+    environment:
+      - no_proxy=localhost,127.0.0.1,llama-gpu,llama-cpu,.parana,pr.gov.br
+      - NO_PROXY=localhost,127.0.0.1,llama-gpu,llama-cpu,.parana,pr.gov.br
+    ports:
+      - "8000:8000"
+    networks:
+      - rade_net
+    # Caso queira que o prod leia o código em tempo real (igual ao dev), 
+    # descomente as duas linhas abaixo:
+    # volumes:
+    #   - .:/app
+
+  llama-gpu:
     build: 
       context: .
       dockerfile: Dockerfile
     image: rafaelaugustodocumentoextratorrade-app
-    ports:
-      - "8000:8000"
-    volumes:
-      - .:/app
-    depends_on:
-      - llama-gpu
-      - llama-cpu
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
-
-  llama-gpu:
-    image: rafaelaugustodocumentoextratorrade-app
+    container_name: rade-llama-gpu
     command: ["python", "-m", "llama_cpp.server", "--model", "./app/models/phi_pt_q4_k_m.gguf", "--n_gpu_layers", "-1", "--n_ctx", "4096", "--flash_attn", "True", "--host", "0.0.0.0", "--port", "8001"]
     ports:
       - "8001:8001"
     volumes:
       - .:/app
+    networks:
+      - rade_net
     deploy:
       resources:
         reservations:
@@ -36,15 +40,15 @@ services:
 
   llama-cpu:
     image: rafaelaugustodocumentoextratorrade-app
-    command: ["python", "-m", "llama_cpp.server", "--model", "./app/models/phi_pt_q4_k_m.gguf", "--n_gpu_layers", "0", "--n_ctx", "4096", "--flash_attn", "True", "--host", "0.0.0.0", "--port", "8002"]
+    container_name: rade-llama-cpu
+    command: ["python", "-m", "llama_cpp.server", "--model", "./app/models/phi_pt_q4_k_m.gguf", "--n_gpu_layers", "0", "--n_ctx", "4096", "--host", "0.0.0.0", "--port", "8002"]
     ports:
       - "8002:8002"
     volumes:
       - .:/app
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
+    networks:
+      - rade_net
+
+networks:
+  rade_net:
+    external: true

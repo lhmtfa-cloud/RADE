@@ -72,7 +72,7 @@ class PDFGenerator:
         result_text = re.sub(r'(?i)\*?\*?\s*DETALHAMENTO POR BLOCOS\s*\*?\*?[\s:\-]*', '', result_text).strip()
         
         pattern = re.compile(
-            r'(?:^|\n)\s*\*\*\s*(INTERESSADO|DOCUMENTO|DESTINATÁRIO|RESUMO PRINCIPAL|ANÁLISE DE CÁLCULOS|INCONSISTÊNCIAS IDENTIFICADAS|Pág.*?\|\s*Movimentação.*?)\s*:?\s*\*\*(?:\s*:)?',
+            r'(?:^|\n)\s*\*\*\s*(INTERESSADO|DOCUMENTO|DESTINATÁRIO|NATUREZA DO PROCESSO|RESUMO PRINCIPAL|ANÁLISE TÉCNICA E CHECKLIST|INCONSISTÊNCIAS IDENTIFICADAS|ANÁLISE DE CÁLCULOS|FUNDAMENTAÇÃO LEGAL|Pág.*?\|\s*Movimentação.*?)\s*:?\s*\*\*(?:\s*:)?',
             re.IGNORECASE
         )
         
@@ -149,12 +149,17 @@ class PDFGenerator:
         elements.append(PageBreak())
         
         ano_atual = datetime.now().year
-        num_memo = codigo_rastreio[:4].upper() if codigo_rastreio else "0000"
-        elements.append(Paragraph(f"Memo n.º {num_memo}/{ano_atual}/SETI-<b>[INSIRA AQUI]</b>", memo_style))
+        num_protocolo = meta.get("Protocolo", "0000") if meta else "0000"
+        
+        if num_protocolo == "0000" and codigo_rastreio:
+            num_protocolo = codigo_rastreio[:8].upper()
+            
+        elements.append(Paragraph(f"Memo n.º {num_protocolo}/{ano_atual}/SETI-<b>[INSIRA AQUI]</b>", memo_style))
         
         para_nome = "<b>[INSIRA AQUI]</b>"
         
-        assunto_final = meta.get('Assunto_IA', 'Documento Oficial').strip()
+        assunto_final = meta.get('Assunto_IA', 'Documento Oficial').strip() if meta else 'Documento Oficial'
+        assunto_final = assunto_final.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
             
         elements.append(Paragraph(f"Para: {para_nome}", memo_style))
         elements.append(Paragraph(f"Assunto: {assunto_final}", memo_style))
@@ -163,10 +168,11 @@ class PDFGenerator:
         elements.append(Paragraph("Senhor(a),", memo_style))
         
         if corpo_resposta:
-            corpo_formatado = corpo_resposta.replace('[INSERIR AQUI]', '<b>[INSIRA AQUI]</b>').replace('[INSIRA AQUI]', '<b>[INSIRA AQUI]</b>')
+            corpo_escaped = corpo_resposta.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+            corpo_formatado = corpo_escaped.replace('[INSERIR AQUI]', '<b>[INSIRA AQUI]</b>').replace('[INSIRA AQUI]', '<b>[INSIRA AQUI]</b>')
             for p in corpo_formatado.split('\n'):
                 if p.strip():
-                    match = re.match(r'^(I|II|III)\.\s+(.*)', p.strip())
+                    match = re.match(r'^(I|II|III|IV)\.\s+(.*)', p.strip())
                     if match:
                         p_text = f"<bullet>{match.group(1)}.</bullet>{match.group(2)}"
                         elements.append(Paragraph(p_text, memo_indent))

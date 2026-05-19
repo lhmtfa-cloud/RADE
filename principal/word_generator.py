@@ -26,10 +26,13 @@ class WordGenerator:
             meta = {}
         
         ano_atual = datetime.now().year
-        num_memo = codigo_rastreio[:4].upper() if codigo_rastreio else "0000"
+        num_protocolo = meta.get("Protocolo", "0000") if meta else "0000"
+        
+        if num_protocolo == "0000" and codigo_rastreio:
+            num_protocolo = codigo_rastreio[:8].upper()
         
         p_memo = doc.add_paragraph()
-        p_memo.add_run(f"Memo n.º {num_memo}/{ano_atual}/SETI-")
+        p_memo.add_run(f"Memo n.º {num_protocolo}/{ano_atual}/SETI-")
         p_memo.add_run("[INSIRA AQUI]").bold = True
         p_memo.paragraph_format.space_after = Pt(12)
         

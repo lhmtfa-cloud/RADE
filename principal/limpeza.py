@@ -3,10 +3,13 @@ import re
 import os
 
 def extrair_hash_eprotocolo(texto_bruto):
-    protocolo_pr = re.search(r'(?i)\b(\d{2}\.\d{3}\.\d{3}-\d)\b', texto_bruto)
+    protocolo_pr = re.search(r'\b(\d{2}[\.\s]?\d{3}[\.\s]?\d{3}[\-\s]?\d)\b', texto_bruto)
     hash_sha = re.search(r'(?i)\b([A-Fa-f0-9]{32,64})\b', texto_bruto)
     
     if protocolo_pr:
+        p_clean = re.sub(r'[\.\-\s]', '', protocolo_pr.group(1))
+        if len(p_clean) == 9:
+            return f"Protocolo PR: {p_clean[:2]}.{p_clean[2:5]}.{p_clean[5:8]}-{p_clean[8]}"
         return f"Protocolo PR: {protocolo_pr.group(1)}"
     elif hash_sha:
         return f"Hash Validação: {hash_sha.group(1).upper()}"
@@ -99,7 +102,13 @@ def limpar_texto_para_ia(texto):
     return texto
 
 def extrair_metadados_protocolo(texto_bruto):
-    metadados = {"Para": "N/A", "De": "N/A", "Documento": "N/A", "Assunto": "N/A", "Autenticidade": "N/A"}
+    metadados = {"Para": "N/A", "De": "N/A", "Documento": "N/A", "Assunto": "N/A", "Autenticidade": "N/A", "Protocolo": "0000"}
+    
+    m_prot = re.search(r'\b(\d{2}[\.\s]?\d{3}[\.\s]?\d{3}[\-\s]?\d)\b', texto_bruto)
+    if m_prot:
+        p_clean = re.sub(r'[\.\-\s]', '', m_prot.group(1))
+        if len(p_clean) == 9:
+            metadados["Protocolo"] = f"{p_clean[:2]}.{p_clean[2:5]}.{p_clean[5:8]}-{p_clean[8]}"
     
     m_para = re.search(r'(?i)(?:Para:|Ao\s+Sr\.?|À\s+Sra\.?|Ao\s+Senhor|À\s+Senhora)\s*:?\s*\n?\s*([^\n]+)', texto_bruto)
     if m_para: 

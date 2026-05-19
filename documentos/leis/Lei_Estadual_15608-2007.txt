@@ -1,0 +1,30 @@
+### Resumo Estruturado: Lei Estadual Nº 15.608/2007 (Licitações e Contratos do Estado do Paraná)
+
+**1. Objetivo da Lei**
+* [cite_start]Estabelecer normas e princípios sobre licitações, contratos administrativos e convénios no âmbito dos Poderes do Estado do Paraná, em consonância com as normas gerais federais. [cite: 3071]
+
+**2. Definições**
+* [cite_start]**Contrato Administrativo:** Ajuste firmado entre órgãos ou entidades da Administração Pública e particulares, criando um vínculo com obrigações recíprocas. [cite: 3104]
+* [cite_start]**Convénio:** Acordo firmado por entidades públicas entre si ou com particulares para a consecução de objectivos comuns, sem remuneração ou cobrança de taxas entre os partícipes (salvo excepções legais). [cite: 3105]
+* **Modalidades de Licitação:**
+    * [cite_start]*Concorrência:* Para licitações de maior valor ou complexidade. [cite: 3386]
+    * [cite_start]*Pregão:* Destinada à aquisição de bens e serviços comuns, caracterizada por disputa através de propostas e lances verbais ou electrónicos. [cite: 3390, 3438]
+    * [cite_start]*Concurso, Convite, Leilão e Tomada de Preços:* Outras modalidades definidas pela natureza do objecto ou pelo valor estimado da contratação. [cite: 3387, 3388, 3389, 3391]
+* [cite_start]**Sistema de Registo de Preços:** Procedimento utilizado para registo das propostas seleccionadas para futuras e eventuais contratações ou fornecimentos. [cite: 3260]
+
+**3. Direitos e Deveres**
+* [cite_start]A Administração Pública tem o dever de pautar os seus actos pelos princípios da legalidade, isonomia, moralidade, publicidade e sustentabilidade ambiental. [cite: 3142, 3143]
+* [cite_start]A Administração possui a prerrogativa de modificar e rescindir unilateralmente os contratos por razões de interesse público, bem como o dever de fiscalizar a respectiva execução. [cite: 3762, 3763, 3764]
+* [cite_start]O contratado tem o direito à manutenção do equilíbrio económico-financeiro inicial do contrato, devendo as cláusulas financeiras ser revistas em caso de factos imprevisíveis ou de força maior. [cite: 3767, 3859]
+* [cite_start]É dever do contratado reparar, corrigir ou substituir, às suas expensas, vícios ou defeitos resultantes da execução do contrato ou dos materiais empregues. [cite: 3888]
+
+**4. Exceções**
+* [cite_start]**Inexigibilidade de Licitação:** Ocorre quando há inviabilidade de competição, como na contratação de fornecedor exclusivo, serviços técnicos de notória especialização ou artistas consagrados. [cite: 3332, 3333, 3334, 3335]
+* [cite_start]**Dispensa de Licitação:** Permitida em situações tipificadas na lei, tais como compras ou obras de pequeno valor, situações de emergência ou calamidade pública, ou quando a licitação anterior resultar deserta. [cite: 3338, 3341, 3342]
+* [cite_start]A contratação directa (dispensa ou inexigibilidade) exige sempre um acto formal e devidamente fundamentado pela autoridade competente. [cite: 3364]
+
+**5. Sanções**
+* [cite_start]As sanções administrativas devem ser aplicadas mediante procedimento administrativo que garanta a ampla defesa e o contraditório. [cite: 4043]
+* [cite_start]As penalidades aplicáveis incluem advertência, multa (que pode ser descontada da garantia) e descredenciamento do sistema de registo. [cite: 4004, 4005, 4008, 4017]
+* [cite_start]**Suspensão Temporária:** Impedimento de participar em licitações e contratar com a Administração por um prazo não superior a 2 anos, aplicável em casos de inexecução contratual ou recusa na assinatura do contrato. [cite: 4006, 4020, 4021]
+* [cite_start]**Declaração de Inidoneidade:** Sanção mais grave, com prazo máximo de 5 anos, aplicada por condutas fraudulentas, apresentação de documentos falsos ou condenação definitiva por improbidade administrativa. [cite: 4007, 4027, 4028, 4033, 4034]

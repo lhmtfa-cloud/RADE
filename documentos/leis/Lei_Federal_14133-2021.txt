@@ -1,0 +1,28 @@
+### Resumo Estruturado: Lei Nº 14.133/2021 (Lei de Licitações e Contratos Administrativos)
+
+**1. Objetivo da Lei**
+* Estabelecer normas gerais de licitação e contratação para as Administrações Públicas diretas, autárquicas e fundacionais da União, dos Estados, do Distrito Federal e dos Municípios.
+
+**2. Definições**
+* **Contratante:** Órgão ou entidade da Administração Pública direta ou indireta que firma contrato administrativo.
+* **Contratado:** Pessoa física ou jurídica, ou consórcio de pessoas jurídicas, signatária de contrato com a Administração.
+* **Edital:** Documento que fixa as regras, condições e critérios do processo licitatório.
+* **Termo de Referência:** Documento contendo os elementos necessários e suficientes para caracterizar o objeto da licitação, essencial para a contratação de bens e serviços.
+* **Agente de Contratação:** Servidor designado pela autoridade competente para tomar decisões, acompanhar o trâmite da licitação e impulsionar o procedimento.
+
+**3. Direitos e Deveres**
+* A Administração Pública tem o dever de realizar licitação prévia para a contratação de obras, serviços, compras e alienações, garantindo a competição justa.
+* Os atos devem observar a transparência, com a divulgação obrigatória e centralizada no Portal Nacional de Contratações Públicas (PNCP).
+* O contratado possui o direito à manutenção do equilíbrio econômico-financeiro inicial do contrato em caso de fatos imprevisíveis.
+* É dever da Administração gerir e fiscalizar a execução dos contratos, podendo reter pagamentos ou executar garantias em caso de falhas.
+* É obrigatória a implantação de programa de integridade (compliance) pelo contratado nas contratações de obras, serviços e fornecimentos de grande vulto.
+
+**4. Exceções**
+* **Inexigibilidade de Licitação:** Contratação direta permitida quando houver inviabilidade de competição (ex: fornecedor exclusivo, artista consagrado pela crítica, serviços técnicos especializados de natureza singular).
+* **Dispensa de Licitação:** Contratação direta autorizada em situações específicas da lei (ex: contratações de baixo valor, casos de emergência ou calamidade pública, locação de imóveis com características únicas).
+* A lei não se aplica aos contratos das empresas públicas e sociedades de economia mista (que seguem a Lei nº 13.303/2016), exceto no que diz respeito às disposições penais.
+
+**5. Sanções**
+* **Sanções Administrativas:** O descumprimento de regras ou contratos pode gerar advertência, multa, impedimento de licitar e contratar (máximo de 3 anos), ou declaração de inidoneidade para licitar ou contratar (de 3 a 6 anos).
+* Para a aplicação de sanções mais graves (impedimento e inidoneidade), exige-se a instauração de processo de responsabilização com garantia de ampla defesa.
+* **Sanções Penais:** A lei incorporou os crimes licitatórios ao Código Penal, prevendo penas de reclusão severas para condutas como contratação direta ilegal, frustração do caráter competitivo da licitação, fraude em licitação ou contrato e modificação irregular de contrato.

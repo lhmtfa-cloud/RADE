@@ -1,0 +1,31 @@
+### Resumo Estruturado: Lei Nº 12.527/2011 (Lei de Acesso à Informação - LAI)
+
+**1. Objetivo da Lei**
+* Regulamentar o direito constitucional de acesso às informações públicas, estabelecendo normas e procedimentos para que a União, os Estados, o Distrito Federal e os Municípios garantam a transparência na gestão pública.
+
+**2. Definições**
+* **Informação:** Dados, processados ou não, que podem ser utilizados para produção e transmissão de conhecimento, contidos em qualquer formato ou suporte.
+* **Documento:** Unidade de registro de informações, independentemente do formato ou suporte.
+* **Informação Sigilosa:** Aquela submetida temporariamente à restrição de acesso público em razão de sua imprescindibilidade para a segurança da sociedade e do Estado.
+* **Informação Pessoal:** Aquela relacionada à pessoa natural identificada ou identificável.
+* **Transparência Ativa:** Divulgação proativa de informações de interesse geral pelos órgãos públicos, independentemente de requerimento.
+* **Transparência Passiva:** Disponibilização de informações em resposta a pedidos formulados por cidadãos.
+
+**3. Direitos e Deveres**
+* É dever do Estado garantir o direito de acesso à informação, que será franqueada mediante procedimentos objetivos, ágeis e em linguagem de fácil compreensão.
+* Qualquer pessoa, natural ou jurídica, tem o direito de solicitar e receber informações públicas dos órgãos e entidades, sem necessidade de apresentar os motivos da solicitação.
+* Os órgãos públicos têm o dever de criar o Serviço de Informações ao Cidadão (SIC) para atender, orientar e protocolar os requerimentos de acesso.
+* É obrigatória a divulgação de informações mínimas na internet (transparência ativa), como repasses financeiros, licitações, contratos, remunerações de servidores e estrutura organizacional.
+
+**4. Exceções**
+* **Classificação por Sigilo:** Informações que colocam em risco a segurança do Estado ou da sociedade podem ser classificadas como:
+    * *Ultrassecretas:* prazo máximo de restrição de 25 anos.
+    * *Secretas:* prazo máximo de restrição de 15 anos.
+    * *Reservadas:* prazo máximo de restrição de 5 anos.
+* **Informações Pessoais:** Informações relativas à intimidade, vida privada, honra e imagem têm acesso restrito pelo prazo máximo de 100 anos, salvo consentimento expresso da pessoa ou exceções legais (ex: apuração de irregularidades).
+* **Sigilos Legais:** A lei não afasta outras hipóteses de sigilo previstas em legislação específica, como sigilo bancário, fiscal, industrial e segredo de justiça.
+
+**5. Sanções**
+* **Condutas Ilícitas:** Recusar-se a fornecer informação pública, retardar o fornecimento, fornecer informação incorreta ou incompleta de forma intencional, e destruir ou ocultar documentos públicos.
+* **Penalidades para Agentes Públicos:** Suspensão, advertência, multa, rescisão de vínculo e responsabilização por improbidade administrativa, garantido o direito à ampla defesa.
+* **Penalidades para Entidades Privadas:** Entidades sem fins lucrativos que recebem recursos públicos e descumprem a lei podem sofrer advertência, multa, suspensão temporária de participação em licitação e declaração de inidoneidade para contratar com a Administração Pública.

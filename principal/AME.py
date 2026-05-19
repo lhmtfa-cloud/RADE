@@ -1,18 +1,20 @@
-import fitz
-import concurrent.futures
-import pytesseract
-import pdfplumber
+import os
+import re
 import requests
+import fitz
+import pytesseract
+import concurrent.futures
+import pdfplumber
 import queue
 import threading
-import re
-import os
+from PIL import Image, ImageOps, ImageEnhance
 from datetime import datetime as dt
 from workalendar.america import Brazil
 from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
-from PIL import Image, ImageEnhance, ImageOps
-from .limpeza import extrair_metadados_protocolo, extrair_texto_bruto_pdf, limpar_texto_para_ia, gerar_arquivo_eventos
+from langchain_community.document_loaders import DirectoryLoader, TextLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from limpeza import extrair_texto_bruto_pdf, extrair_metadados_protocolo, limpar_texto_para_ia, gerar_arquivo_eventos
 
 URL_GPU_1 = "http://llama-gpu:8001/v1/completions"
 URL_GPU_2 = "http://llama-gpu-2:8003/v1/completions"
@@ -23,37 +25,55 @@ http_session = requests.Session()
 def consultar_legislacao_rag(query):
     try:
         embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-        
-        if not os.path.exists("./chroma_db"):
-            textos_base = [
-                "Lei Estadual nº 15.608/2007: Estabelece normas sobre licitações, contratos administrativos e convênios no âmbito dos Poderes do Estado do Paraná. Exige justificativa técnica para compras.",
-                "Lei Federal nº 14.133/2021: Nova Lei de Licitações. O processo de compra pública deve conter termo de referência e pesquisa de preços válida de mercado.",
-                "Decreto Estadual nº 10.086/2022: Regulamenta a execução de compras e contratações públicas no Paraná, incluindo a aquisição de gêneros alimentícios e insumos básicos."
-            ]
-            vectorstore = Chroma.from_texts(
-                texts=textos_base, 
-                embedding=embeddings, 
-                persist_directory="./chroma_db"
+        persist_directory = "./chroma_db"
+
+        if not os.path.exists(persist_directory):
+            diretorio_leis = "./documentos/leis"
+            
+            if not os.path.exists(diretorio_leis):
+                return "Erro: O diretório './documentos/leis' não foi encontrado."
+
+            loader = DirectoryLoader(diretorio_leis, glob="**/*.md", loader_cls=TextLoader)
+            documentos = loader.load()
+
+            if not documentos:
+                return "Aviso: Nenhum arquivo de resumo encontrado para indexação."
+
+            text_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=800,
+                chunk_overlap=100,
+                separators=["\n### ", "\n**", "\n\n", "\n", " "]
+            )
+            textos_fatiados = text_splitter.split_documents(documentos)
+
+            vectorstore = Chroma.from_documents(
+                documents=textos_fatiados,
+                embedding=embeddings,
+                persist_directory=persist_directory
             )
         else:
-            vectorstore = Chroma(persist_directory="./chroma_db", embedding_function=embeddings)
-            
-        resultados = vectorstore.similarity_search(query, k=2)
-        if resultados:
-            return " ".join([doc.page_content for doc in resultados])
-        return "Nenhuma legislação correspondente mapeada no vetor."
-    except Exception as e:
-        return f"Base RAG em falha técnica. Detalhe: {str(e)}"
+            vectorstore = Chroma(
+                persist_directory=persist_directory,
+                embedding_function=embeddings
+            )
 
-def chamar_llm_api(prompt, max_tokens=800, temperature=0.1, usar_cpu=False):
+        docs_relvantes = vectorstore.similarity_search(query, k=3)
+        contexto_extraido = "\n\n---\n\n".join([doc.page_content for doc in docs_relvantes])
+        
+        return contexto_extraido
+
+    except Exception as e:
+        return f"Erro no processamento RAG: {str(e)}"
+    
+def chamar_llm_api(prompt, max_tokens=800, temperature=0.0, usar_cpu=False):
     url = URL_GPU_1
     payload = {
         "prompt": prompt,
         "max_tokens": max_tokens,
         "temperature": temperature,
-        "top_p": 0.9,
-        "frequency_penalty": 0.5,
-        "presence_penalty": 0.2,
+        "top_p": 1.0,
+        "frequency_penalty": 0.0,
+        "presence_penalty": 0.0,
         "stop": ["<|end|>"]
     }
     try:
@@ -143,14 +163,16 @@ def extrair_tabelas_pdf(caminho_pdf):
 def avaliar_e_justificar_ocr(resumo_original, dados_extras):
     prompt = (
         f"<|user|>\n"
-        f"Você possui o RESUMO PRINCIPAL de um documento e DADOS EXTRAS extraídos de tabelas.\n"
-        f"Se os DADOS EXTRAS não tiverem valores numéricos novos, responda APENAS: 'IRRELEVANTE'.\n"
-        f"Se houverem valores numéricos importantes, crie UMA ÚNICA FRASE complementando o resumo principal.\n\n"
-        f"RESUMO PRINCIPAL: {resumo_original}\n\n"
+        f"Sua tarefa é extrair informações numéricas dos DADOS EXTRAS para complementar o RESUMO.\n"
+        f"REGRAS OBRIGATÓRIAS:\n"
+        f"1. Se não houver valores úteis, responda APENAS: 'IRRELEVANTE'.\n"
+        f"2. Se houver, escreva UMA ÚNICA FRASE DIRETA com os valores, quantidades e produtos.\n"
+        f"3. REGRA ABSOLUTA: PROIBIDO usar metalinguagem. NÃO escreva 'O resumo principal diz', 'Os dados extras mostram' ou 'A tabela indica'. Escreva apenas o fato direto.\n\n"
+        f"RESUMO: {resumo_original}\n\n"
         f"DADOS EXTRAS:\n{dados_extras[:1500]}\n<|end|>\n"
         f"<|assistant|>\n"
     )
-    return chamar_llm_api(prompt, max_tokens=150, temperature=0.1, usar_cpu=False)
+    return chamar_llm_api(prompt, max_tokens=150, temperature=0.0, usar_cpu=False)
 
 def gerar_resumo_phi(texto_limpo):
     prompt = (
@@ -162,7 +184,7 @@ def gerar_resumo_phi(texto_limpo):
         f"<|assistant|>\n"
         f"Resumo em português: "
     )
-    return chamar_llm_api(prompt, max_tokens=200, temperature=0.1, usar_cpu=False)
+    return chamar_llm_api(prompt, max_tokens=200, temperature=0.0, usar_cpu=False)
 
 def gerar_assunto_curto_ia(resumo):
     prompt = (
@@ -172,8 +194,23 @@ def gerar_assunto_curto_ia(resumo):
         f"RESUMO: {resumo}\n<|end|>\n"
         f"<|assistant|>\n"
     )
-    resposta = chamar_llm_api(prompt, max_tokens=30, temperature=0.1, usar_cpu=False)
+    resposta = chamar_llm_api(prompt, max_tokens=30, temperature=0.0, usar_cpu=False)
     return re.sub(r'(?i)^assunto:\s*', '', resposta).strip()
+
+def classificar_natureza_processo(resumo, assunto):
+    prompt = (
+        f"<|user|>\n"
+        f"Classifique a natureza do processo em APENAS UMA das categorias abaixo, baseando-se no resumo e assunto:\n"
+        f"- Licitação/Compras (Gatilhos: Pregão, Ata, Compra, Dispensa)\n"
+        f"- RH (Gatilhos: Férias, Licença, Cargo, Progressão)\n"
+        f"- Prestação de Contas (Gatilhos: TED, Relatório Financeiro)\n"
+        f"- Ouvidoria/Denúncia (Gatilhos: Reclamação, Ética)\n"
+        f"- Financiamento/Pesquisa (Gatilhos: Fomento, Projeto)\n"
+        f"- Gestão Orçamentária (Gatilhos: PPA, LOA, Cota)\n\n"
+        f"Resumo: {resumo}\nAssunto: {assunto}\n"
+        f"Responda EXATAMENTE com o nome de uma das categorias acima.\n<|end|>\n<|assistant|>\n"
+    )
+    return chamar_llm_api(prompt, max_tokens=20, temperature=0.0, usar_cpu=False).strip()
 
 def localizar_paginas_referencia(caminho_pdf, resumo_ia):
     doc = fitz.open(caminho_pdf)
@@ -267,12 +304,12 @@ def processar_documento_final(caminho_pdf):
 
     eventos_resumidos_raw = []
     timeline_para_txt_raw = []
-    inconsistencias_resultado = "Não foi possível analisar inconsistências."
+    inconsistencias_resultado = "Fluxo processual íntegro."
     resumo_desde_seti = "Sem movimentações recentes."
-    inconsistencias_seti = "Sem inconsistências."
+    inconsistencias_seti = "Fluxo recente íntegro."
     decisao_dg = "Nenhuma manifestação da Diretoria Geral encontrada."
     debug_texto_blocos = "=== DEBUG DE TEXTOS E PROMPTS ENVIADOS PARA A IA ===\n\n"
-    resultado_calculos = "Nenhum cálculo exato a ser analisado."
+    resultado_calculos = "Nenhum cálculo a ser analisado."
     alertas_sla_texto = ""
     
     if movimentacoes:
@@ -333,7 +370,7 @@ def processar_documento_final(caminho_pdf):
                     bloco_atual = fila_tarefas.get_nowait()
                 except queue.Empty:
                     break
-                resumo_bloco = chamar_llm_api(bloco_atual["prompt"], 300, 0.1, usar_cpu)
+                resumo_bloco = chamar_llm_api(bloco_atual["prompt"], 300, 0.0, usar_cpu)
                 linha_pdf = f"**{bloco_atual['paginas']} | Movimentação {bloco_atual['mov']}**\n{resumo_bloco}\n"
                 linha_txt = f"{bloco_atual['paginas']} | Movimentação {bloco_atual['mov']} | {resumo_bloco.replace(chr(10), ' ')}"
                 with lock:
@@ -372,7 +409,7 @@ def processar_documento_final(caminho_pdf):
             f"- Não misture informações antigas.\n"
             f"TEXTO:\n{texto_pos_seti[:3000]}\n<|end|>\n<|assistant|>\n"
         )
-        resumo_desde_seti = chamar_llm_api(prompt_resumo_seti, 200, 0.1, False).replace('\n', ' ').strip()
+        resumo_desde_seti = chamar_llm_api(prompt_resumo_seti, 200, 0.0, False).replace('\n', ' ').strip()
         
         prompt_inconsistencias_seti = (
             f"<|user|>\nExistem erros processuais explícitos neste trecho final?\n"
@@ -381,7 +418,7 @@ def processar_documento_final(caminho_pdf):
             f"- Se não houver erros, a sua resposta deve ser EXATAMENTE a frase: 'Fluxo recente íntegro.' NÃO adicione nenhuma explicação ou justificativa.\n"
             f"<|end|>\n<|assistant|>\n"
         )
-        inconsistencias_seti = chamar_llm_api(prompt_inconsistencias_seti, 100, 0.1, False).replace('\n', ' ').strip()
+        inconsistencias_seti = chamar_llm_api(prompt_inconsistencias_seti, 100, 0.0, False).replace('\n', ' ').strip()
         if re.search(r'(?i)íntegro', inconsistencias_seti) and not re.search(r'(?i)erro|inconsistência|falha', inconsistencias_seti):
             inconsistencias_seti = "Fluxo recente íntegro."
 
@@ -395,7 +432,7 @@ def processar_documento_final(caminho_pdf):
             f"<|end|>\n"
             f"<|assistant|>\n"
         )
-        inconsistencias_resultado = chamar_llm_api(prompt_inconsistencias, 300, 0.1, False).strip()
+        inconsistencias_resultado = chamar_llm_api(prompt_inconsistencias, 300, 0.0, False).strip()
         if re.search(r'(?i)íntegro', inconsistencias_resultado) and not re.search(r'(?i)erro|inconsistência|falha', inconsistencias_resultado):
             inconsistencias_resultado = "Fluxo processual íntegro."
         
@@ -407,20 +444,23 @@ def processar_documento_final(caminho_pdf):
             f"- Se não houver, responda apenas 'Nenhuma manifestação da Diretoria Geral encontrada.'\n<|end|>\n"
             f"<|assistant|>\n"
         )
-        decisao_dg = chamar_llm_api(prompt_decisao_dg, 200, 0.1, False).replace('\n', ' ').strip()
+        decisao_dg = chamar_llm_api(prompt_decisao_dg, 200, 0.0, False).replace('\n', ' ').strip()
 
         prompt_calculos = (
             f"<|user|>\n"
-            f"Extraia valores financeiros ESTRITAMENTE para cálculo matemático com base nos dados abaixo.\n"
+            f"Extraia os valores financeiros e verifique a matemática.\n"
+            f"DADOS:\n{texto_tabelas[:1500]}\n{texto_ocr[:1000]}\n{corpo_limpo[:1500]}\n\n"
             f"REGRAS OBRIGATÓRIAS:\n"
-            f"1. Não faça resumos narrativos. Não conte a história da compra.\n"
-            f"2. Se não houver preços ou quantidades claras, responda EXATAMENTE: 'Nenhum cálculo a ser analisado.'\n"
-            f"3. Se houver valores, responda ESTRITAMENTE neste formato matemático:\n"
-            f"Cálculo: [Quantidade] x R$ [Valor Unitário] = R$ [Total]\n"
-            f"DADOS:\n{texto_tabelas[:1500]}\n{texto_ocr[:1000]}\n{corpo_limpo[:1500]}\n"
+            f"1. Encontre a Quantidade, Valor Unitário e Valor Total declarado.\n"
+            f"2. Se faltar algum desses três, responda APENAS a palavra: AUSENTE.\n"
+            f"3. Multiplique Quantidade x Valor Unitário.\n"
+            f"4. Compare o resultado matemático com o Valor Total declarado. ATENÇÃO: R$ 1441,50 é o mesmo que R$ 1.441,50. Ignore o ponto de milhar.\n"
+            f"5. Escreva sua conclusão em UMA ÚNICA FRASE. Comece a frase com 'Valores batem:' ou 'Divergência:'. Não crie listas enumeradas.\n"
             f"<|end|>\n<|assistant|>\n"
         )
         resultado_calculos = chamar_llm_api(prompt_calculos, 200, 0.0, False).strip()
+        if "AUSENTE" in resultado_calculos.upper():
+            resultado_calculos = "Nenhum cálculo a ser analisado."
 
     caminho_events_txt = gerar_arquivo_eventos(timeline_para_txt if movimentacoes else [])
     dados_extras = f"--- DADOS DE TABELAS ---\n{texto_tabelas}\n\n--- DADOS DE IMAGENS ---\n{texto_ocr}"
@@ -446,52 +486,103 @@ def processar_documento_final(caminho_pdf):
         f"REGRA OBRIGATÓRIA: Escreva no máximo 2 frases. Aplique a lei ao resumo fornecido. Diga se o pedido principal parece legalmente fundamentado.\n"
         f"<|end|>\n<|assistant|>\n"
     )
-    analise_legal = chamar_llm_api(prompt_legal, 300, 0.1, False).strip()
+    analise_legal = chamar_llm_api(prompt_legal, 300, 0.0, False).strip()
 
-    prompt_resposta = (
+    natureza_processo = classificar_natureza_processo(resumo_final, meta.get('Assunto', ''))
+    
+    texto_limpo_checklist = re.sub(r'\*\*Pág.*?\|\s*Movimentação.*?\*\*\n?', '', texto_todos_resumos)
+
+    prompt_checklist = (
         f"<|user|>\n"
-        f"Com base ESTRITAMENTE nas informações processadas abaixo, gere o texto final.\n\n"
-        f"- Resumo: {resumo_final}\n"
-        f"- Cálculos: {resultado_calculos}\n"
-        f"- Análise Legal: {analise_legal}\n"
-        f"- Inconsistências: {inconsistencias_resultado} | {inconsistencias_seti}\n"
-        f"- Parecer DG: {decisao_dg}\n\n"
-        f"REGRAS:\n"
-        f"Escreva exatamente assim:\n"
-        f"PARTE_1: [Escreva aqui 2 frases unindo o Resumo e a Análise Legal]\n"
-        f"PARTE_2: [Escreva aqui 2 frases informando as Inconsistências e o Parecer DG]\n\n"
-        f"NÃO INVENTE PALAVRAS. USE LINGUAGEM FORMAL.\n"
-        f"<|end|>\n"
-        f"<|assistant|>\n"
+        f"Atue como um auditor rigoroso. Categoria: {natureza_processo}.\n"
+        f"DADOS PARA ANÁLISE:\n{texto_tabelas[:1000]}\n{texto_limpo_checklist[:2000]}\n\n"
+        f"Responda 'SIM', 'NÃO' ou 'NÃO CONSTA' para cada item abaixo, seguido de uma justificativa curta.\n"
     )
-    corpo_raw = chamar_llm_api(prompt_resposta, 600, 0.1, False).strip()
     
-    p1 = resumo_final
-    p2 = f"Análise de inconsistências: {inconsistencias_resultado} Parecer DG: {decisao_dg}"
+    if "Licitação" in natureza_processo or "Compras" in natureza_processo:
+        prompt_checklist += (
+            "Item 1: Existem no mínimo 3 propostas de preço (orçamentos) válidas de empresas diferentes?\n"
+            "Item 2: Existem certidões de regularidade (CND, FGTS)?\n"
+            "Item 3: Há documento de empenho e ele possui data posterior à nota fiscal?\n"
+        )
+    elif "RH" in natureza_processo:
+        prompt_checklist += (
+            "Item 1: O período aquisitivo está correto?\n"
+            "Item 2: Existem assinaturas avançadas?\n"
+        )
+    elif "Prestação" in natureza_processo:
+        prompt_checklist += (
+            "Item 1: Existem sobras no Saldo Disponível?\n"
+        )
+    else:
+        prompt_checklist += "Item 1: A documentação está completa?\n"
+        
+    prompt_checklist += (
+        "\nSiga EXATAMENTE este modelo de resposta:\n"
+        "- Item 1: [SIM/NÃO/NÃO CONSTA] - [Sua justificativa]\n"
+    )
+    if "Licitação" in natureza_processo or "Compras" in natureza_processo:
+        prompt_checklist += "- Item 2: [SIM/NÃO/NÃO CONSTA] - [Sua justificativa]\n- Item 3: [SIM/NÃO/NÃO CONSTA] - [Sua justificativa]\n"
+    elif "RH" in natureza_processo:
+        prompt_checklist += "- Item 2: [SIM/NÃO/NÃO CONSTA] - [Sua justificativa]\n"
+
+    prompt_checklist += f"<|end|>\n<|assistant|>\n"
     
-    match_p1 = re.search(r'PARTE_1:(.*?)(?=PARTE_2:|$)', corpo_raw, re.DOTALL)
-    if match_p1:
-        texto_p1 = match_p1.group(1).replace('\n', ' ').strip()
-        if texto_p1: p1 = texto_p1
-
-    match_p2 = re.search(r'PARTE_2:(.*?)(?=PARTE_3:|PARTE 3|III\.|$)', corpo_raw, re.DOTALL)
-    if match_p2:
-        texto_p2 = match_p2.group(1).replace('\n', ' ').strip()
-        if texto_p2: p2 = texto_p2
-
-    p1 = p1.replace('**', '')
-    p2 = p2.replace('**', '')
+    analise_checklist_raw = chamar_llm_api(prompt_checklist, 200, 0.0, False).strip()
     
-    corpo_resposta = f"I. {p1}\nII. {p2}\nIII. O setor [INSIRA AQUI] declara que [INSIRA AQUI] e encaminha esse protocolo para [INSIRA AQUI]."
+    analise_checklist_raw = analise_checklist_raw.replace('**', '').replace('[', '').replace(']', '')
+    resultado_calculos = resultado_calculos.replace('**', '').replace('[', '').replace(']', '')
+    
+    if "Licitação" in natureza_processo or "Compras" in natureza_processo:
+        analise_checklist_raw = re.sub(r'(?i)Item 1\s*:', 'Mínimo de 3 orçamentos:', analise_checklist_raw)
+        analise_checklist_raw = re.sub(r'(?i)Item 2\s*:', 'Certidões de regularidade:', analise_checklist_raw)
+        analise_checklist_raw = re.sub(r'(?i)Item 3\s*:', 'Empenho posterior à NF:', analise_checklist_raw)
+    elif "RH" in natureza_processo:
+        analise_checklist_raw = re.sub(r'(?i)Item 1\s*:', 'Período aquisitivo:', analise_checklist_raw)
+        analise_checklist_raw = re.sub(r'(?i)Item 2\s*:', 'Assinaturas avançadas:', analise_checklist_raw)
+    elif "Prestação" in natureza_processo:
+        analise_checklist_raw = re.sub(r'(?i)Item 1\s*:', 'Sobras no Saldo Disponível:', analise_checklist_raw)
+    else:
+        analise_checklist_raw = re.sub(r'(?i)Item 1\s*:', 'Documentação completa:', analise_checklist_raw)
 
-    return (
-        f"**INTERESSADO:** {meta.get('De', 'Não identificado')}\n"
-        f"**DOCUMENTO:** {meta.get('Documento', 'Não identificado')}\n"
-        f"**DESTINATÁRIO:** {meta.get('Para', 'Não identificado')}\n"
-        f"**AUTENTICIDADE:** {meta.get('Autenticidade', 'Não identificado')}\n"
-        f"**RESUMO PRINCIPAL:** {resumo_final}\n\nResumo desde passagem recente: {resumo_desde_seti}\n"
-        f"**ANÁLISE DE CÁLCULOS:** {resultado_calculos}\n"
-        f"**INCONSISTÊNCIAS IDENTIFICADAS:**\nTrecho Final: {inconsistencias_seti}\nGerais: {inconsistencias_resultado}\n\n"
-        f"**BASE LEGAL (RAG):** {analise_legal}\n\n"
-        f"**DETALHAMENTO POR BLOCOS:**\n{resumo_eventos_str}"
-    ), dados_extras, caminho_events_txt, debug_texto_blocos, corpo_resposta, meta
+    prompt_texto_corrido = (
+        f"<|user|>\n"
+        f"Reescreva os apontamentos de auditoria abaixo em um texto corrido (um único parágrafo fluido).\n"
+        f"APONTAMENTOS:\n{analise_checklist_raw}\n\n"
+        f"REGRAS ABSOLUTAS:\n"
+        f"1. NÃO INVENTE, NÃO ADICIONE E NÃO CRIE nomes, cargos, documentos, datas ou valores que não estejam explicitamente no texto de APONTAMENTOS acima. Limite-se aos fatos.\n"
+        f"2. Não use listas, marcadores, tópicos ou quebras de linha.\n"
+        f"<|end|>\n<|assistant|>\n"
+    )
+    
+    analise_checklist = chamar_llm_api(prompt_texto_corrido, 250, 0.0, False).strip()
+    analise_checklist = analise_checklist.replace('\n', ' ')
+    
+    analise_checklist = re.sub(r'(?i)\bentandom\b', 'entanto, o', analise_checklist)
+    analise_checklist = re.sub(r'(?i)\b(entanto|contudo|todavia)m\b', r'\1,', analise_checklist)
+
+    corpo_resposta = (
+        f"I. Este documento é de caráter de {natureza_processo}, no qual trata de: {resumo_final}\n\n"
+        f"II. Durante a análise, foram identificadas as seguintes questões operacionais e legais:\n"
+        f"- Análise Documental: {analise_checklist}\n"
+        f"- Inconsistências Lógicas: {inconsistencias_resultado}\n"
+        f"- Análise de Cálculos: {resultado_calculos}\n"
+        f"- Parecer Legal: {analise_legal}\n\n"
+        f"III. Em face das inconsistências e da base legal apontada, sugere-se [INSIRA AQUI A AÇÃO CORRETIVA].\n\n"
+        f"IV. O setor [INSIRA AQUI] declara que [INSIRA AQUI] e encaminha esse protocolo para [INSIRA AQUI]."
+    )
+    
+    texto_tabela_final = (
+        f"**INTERESSADO**\n{meta.get('De', 'Não identificado')}\n\n"
+        f"**DOCUMENTO**\n{meta.get('Documento', 'Não identificado')}\n\n"
+        f"**DESTINATÁRIO**\n{meta.get('Para', 'Não identificado')}\n\n"
+        f"**NATUREZA DO PROCESSO**\n{natureza_processo}\n\n"
+        f"**RESUMO PRINCIPAL**\n{resumo_final}\n\n"
+        f"**ANÁLISE TÉCNICA E CHECKLIST**\n{analise_checklist}\n\n"
+        f"**INCONSISTÊNCIAS IDENTIFICADAS**\n{inconsistencias_resultado}\n\n"
+        f"**ANÁLISE DE CÁLCULOS**\n{resultado_calculos}\n\n"
+        f"**FUNDAMENTAÇÃO LEGAL**\n{analise_legal}\n\n"
+        f"{resumo_eventos_str}"
+    )
+
+    return texto_tabela_final, dados_extras, caminho_events_txt, debug_texto_blocos, corpo_resposta, meta

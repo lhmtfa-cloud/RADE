@@ -1,0 +1,35 @@
+### Resumo Estruturado: Lei Nº 15.321/2025 (LDO 2026)
+
+**1. Objetivo da Lei**
+* [cite_start]Estabelecer as diretrizes orçamentárias da União para o exercício financeiro de 2026[cite: 1481].
+* [cite_start]Definir as metas e prioridades da administração pública federal, a estrutura dos orçamentos, diretrizes de transferências e despesas com pessoal[cite: 1481, 1482, 1483, 1484].
+
+**2. Definições**
+* [cite_start]**Subtítulo:** O menor nível da categoria de programação, utilizado para delimitar localização geográfica e restringir o objeto da ação[cite: 1505].
+* [cite_start]**Unidade orçamentária:** O menor nível da classificação institucional[cite: 1506].
+* [cite_start]**Convênios:** Acordo que disciplina a transferência de recursos financeiros entre a União e outros entes ou entidades privadas sem fins lucrativos[cite: 1508].
+* [cite_start]**Produto:** O bem ou serviço resultante de uma ação orçamentária[cite: 1513].
+* [cite_start]**Projeto:** Conjunto de operações limitadas no tempo, das quais resulta um produto para expansão governamental[cite: 1518].
+* [cite_start]**Atividade:** Operações contínuas e permanentes resultantes em produto para manutenção da ação de governo[cite: 1517].
+
+**3. Direitos e Deveres**
+* [cite_start]A elaboração da Lei Orçamentária deve ser compatível com a meta de superávit primário de R$ 34.264.603.518,00 para o Governo Central[cite: 1490].
+* [cite_start]As prioridades do governo para 2026 consistem no Programa de Aceleração do Crescimento (Novo PAC) e nas metas do Plano Plurianual 2024-2027[cite: 1502].
+* [cite_start]A reserva de contingência deve equivaler a, no mínimo, 0,2% da receita corrente líquida constante do projeto de lei[cite: 1642].
+* [cite_start]É vedada a destinação de recursos para construção, reforma voluptuária ou locação de imóveis residenciais funcionais[cite: 1679].
+* [cite_start]É vedado o pagamento a agentes públicos da ativa por prestação de serviços de consultoria ou assistência técnica[cite: 1684].
+* [cite_start]É vedada a criação de novas despesas obrigatórias de caráter continuado e de novos fundos para financiamento de políticas públicas em 2026[cite: 1765, 1766].
+* [cite_start]É vedado reajustar benefícios de auxílio-alimentação em percentual superior à variação do IPCA[cite: 2542].
+
+**4. Exceções**
+* [cite_start]Admite-se intervalo de tolerância na meta de superávit primário, com limite superior de R$ 68.529.207.037,00 e inferior de R$ 0,00[cite: 1493, 1494].
+* [cite_start]Excluem-se da meta de déficit primário as empresas do Grupo Petrobras, a ENBPar e as despesas do Novo PAC limitadas a R$ 5 bilhões[cite: 1498, 1499, 1500].
+* [cite_start]As vedações de gastos com imóveis residenciais não se aplicam a unidades de organizações militares, representações diplomáticas e residências em faixas de fronteira essenciais[cite: 1696, 1697].
+* [cite_start]A vedação à criação de fundos e novas despesas não se aplica em casos de calamidade pública nacional reconhecida pelo Congresso Nacional[cite: 1766].
+* [cite_start]A restrição de pagamento por consultorias a agentes públicos não se aplica a servidores em licença sem remuneração para tratar de interesses particulares[cite: 1723].
+
+**5. Sanções**
+* [cite_start]O não cumprimento do fornecimento de plano de trabalho e dados bancários por parte de entes federativos beneficiários de transferências especiais acarretará a suspensão imediata das transferências até a regularização[cite: 2243, 2244, 2250].
+* [cite_start]A omissão de comunicação de eventuais divergências na relação de débitos de precatórios resultará em responsabilidade solidária do órgão devedor e de seu dirigente[cite: 1819].
+* [cite_start]Obras e serviços que apresentem indícios de irregularidades graves (IGP) poderão sofrer bloqueio da execução física, orçamentária e financeira até que ocorra liberação por decreto legislativo[cite: 2679, 2682].
+* [cite_start]Entidades privadas que receberem recursos de capital estão sujeitas à cláusula de reversão patrimonial, que será executada caso seja verificado desvio de finalidade ou aplicação irregular dos recursos[cite: 2328].

@@ -1,0 +1,27 @@
+### Resumo Estruturado: Lei Nº 4.320/1964 (Normas Gerais de Direito Financeiro)
+
+**1. Objetivo da Lei**
+* Estatuir Normas Gerais de Direito Financeiro para a elaboração e o controle dos orçamentos e balanços da União, dos Estados, dos Municípios e do Distrito Federal, padronizando a contabilidade pública no Brasil.
+
+**2. Definições**
+* **Exercício Financeiro:** Período que coincide com o ano civil (1º de janeiro a 31 de dezembro).
+* **Empenho:** Ato emanado de autoridade competente que cria para o Estado obrigação de pagamento, pendente ou não de implemento de condição.
+* **Liquidação:** Estágio da despesa que consiste na verificação do direito adquirido pelo credor, tendo por base os títulos e documentos comprobatórios do respectivo crédito (comprovação de que o serviço foi prestado ou o bem entregue).
+* **Créditos Adicionais:** Autorizações de despesa não computadas ou insuficientemente dotadas na Lei de Orçamento. Subdividem-se em: Suplementares (reforço de dotação), Especiais (despesas sem dotação específica) e Extraordinários (despesas urgentes e imprevistas).
+* **Restos a Pagar:** Despesas devidamente empenhadas, mas não pagas até o dia 31 de dezembro do exercício correspondente (podendo ser processados ou não processados).
+
+**3. Direitos e Deveres**
+* **Universalidade e Exclusividade:** A Lei de Orçamento deve compreender todas as receitas e todas as despesas (universalidade) e não conterá dispositivo estranho à previsão da receita e à fixação da despesa (exclusividade).
+* É absolutamente vedada a realização de qualquer despesa sem prévio empenho.
+* O pagamento da despesa só pode ser efetuado após sua regular liquidação.
+* É dever da Administração Pública levantar, ao fim do exercício, o Balanço Orçamentário, o Balanço Financeiro, o Balanço Patrimonial e a Demonstração das Variações Patrimoniais.
+* O controle da execução orçamentária compreenderá a legalidade dos atos de que resultem a arrecadação da receita ou a realização da despesa.
+
+**4. Exceções**
+* **Suprimento de Fundos (Adiantamento):** Regime excepcional de despesa aplicável a casos que não possam subordinar-se ao processo normal de aplicação (como viagens ou despesas miúdas de pronto pagamento). O empenho é feito em nome do servidor, que deverá prestar contas posteriormente.
+* **Créditos Extraordinários:** Diferente dos créditos suplementares e especiais, a abertura de créditos extraordinários (para casos de guerra, comoção intestina ou calamidade pública) independe da indicação prévia de recursos compensatórios disponíveis.
+* **Despesas de Exercícios Anteriores (DEA):** Pagamento de dívidas de exercícios fechados que não foram empenhadas na época própria, desde que o orçamento da época tivesse saldo, ou cuja obrigação só foi reconhecida após o encerramento do exercício.
+
+**5. Sanções**
+* A lei estabelece o princípio da responsabilização: os ordenadores de despesas e demais responsáveis por dinheiros, bens e valores públicos estão sujeitos à tomada de contas e responsabilização pessoal.
+* O pagamento de despesa sem a regular liquidação ou a realização de despesa sem prévio empenho implicam a responsabilização do agente público que lhe der causa. (As infrações detalhadas e penalidades severas, como crimes de responsabilidade e improbidade, são complementadas por leis posteriores, mas a base da infração orçamentária nasce do descumprimento destas normas).

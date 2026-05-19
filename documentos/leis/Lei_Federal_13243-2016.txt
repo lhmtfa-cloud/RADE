@@ -1,0 +1,26 @@
+### Resumo Estruturado: Lei Nº 13.243/2016 (Marco Legal da Ciência, Tecnologia e Inovação)
+
+**1. Objetivo da Lei**
+* Estabelecer o Marco Legal da Ciência, Tecnologia e Inovação (CT&I) no Brasil.
+* Criar medidas de estímulo e incentivo ao desenvolvimento científico, à pesquisa, à capacitação tecnológica e à inovação, promovendo a cooperação e a articulação entre o setor público, o setor privado e o meio acadêmico.
+
+**2. Definições**
+* **ICT (Instituição Científica, Tecnológica e de Inovação):** Órgão ou entidade da administração pública ou privada sem fins lucrativos que tenha como missão institucional a pesquisa básica ou aplicada de caráter científico ou tecnológico.
+* **NIT (Núcleo de Inovação Tecnológica):** Estrutura instituída por uma ou mais ICTs com a finalidade de gerir a política de inovação e de propriedade intelectual da instituição.
+* **Inovação:** Introdução de novidade ou aperfeiçoamento no ambiente produtivo e social que resulte em novos produtos, serviços ou processos, compreendendo a agregação de novas funcionalidades.
+* **Empresa de Base Tecnológica:** Empresa cuja atividade produtiva seja direcionada para o desenvolvimento de novos produtos ou processos baseados na aplicação inovadora do conhecimento científico.
+
+**3. Direitos e Deveres**
+* A União, os Estados e os Municípios têm o dever de promover a cooperação entre entes públicos e privados para a geração de riqueza através da inovação.
+* As ICTs públicas têm o direito de compartilhar e permitir o uso de seus laboratórios, equipamentos e instalações por empresas privadas para fins de pesquisa e desenvolvimento.
+* O pesquisador público tem o direito a receber participação financeira (royalties) sobre os ganhos econômicos decorrentes da exploração comercial de suas invenções e criações protegidas.
+* É dever da administração pública simplificar os processos de gestão e controle de projetos de CT&I, focando na avaliação por resultados em vez de apenas no rigor procedimental.
+
+**4. Exceções**
+* **Dispensa de Licitação:** Permite a contratação direta (encomenda tecnológica) por órgãos públicos de empresas ou consórcios para o desenvolvimento de produtos, processos ou serviços inovadores que envolvam risco tecnológico.
+* **Dedicação Exclusiva:** Cria exceção ao regime de dedicação exclusiva de professores e pesquisadores universitários, permitindo que exerçam atividades remuneradas de pesquisa, desenvolvimento e inovação em empresas privadas, desde que respeitados os limites institucionais de carga horária.
+* **Bolsas de Fomento:** Permite a concessão direta de bolsas de estímulo à inovação por fundações de apoio e agências de fomento a pesquisadores e técnicos, estabelecendo expressamente que esses pagamentos não configuram vínculo empregatício.
+
+**5. Sanções**
+* Em caso de irregularidades na execução ou na prestação de contas de projetos de CT&I, os responsáveis estão sujeitos à devolução dos recursos financeiros repassados, devidamente atualizados.
+* O descumprimento de prazos e obrigações em acordos de parceria para pesquisa pode resultar na suspensão de novos repasses de agências de fomento, no bloqueio de participação em novos editais e na aplicação das penalidades administrativas previstas na legislação de licitações e contratos vigentes, além da possível perda de direitos de propriedade intelectual negociados.

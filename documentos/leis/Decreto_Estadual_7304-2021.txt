@@ -1,0 +1,30 @@
+### Resumo Estruturado: Decreto Estadual Nº 7.304/2021 (Regulamento do Sistema eProtocolo - PR)
+
+**1. Objetivo do Decreto**
+* [cite_start]Regulamentar o Sistema de Gestão de Documentos (eProtocolo), estabelecendo-o como o sistema oficial, eletrônico e obrigatório para os trâmites de processos administrativos e prática de atos no âmbito do Poder Executivo do Estado do Paraná[cite: 984, 985].
+
+**2. Definições**
+* [cite_start]**eProtocolo:** Sistema oficial e exclusivo de gestão de documentos emitidos e recebidos no Estado do Paraná[cite: 985, 987].
+* [cite_start]**Usuário externo:** Qualquer pessoa física ou jurídica que não possua vínculo funcional com os órgãos e entidades da Administração Pública Estadual[cite: 1006].
+* [cite_start]**Gestor de Acesso e Gestor Local:** Agentes públicos responsáveis pela parametrização de perfis, permissões, liberação de funcionalidades e distribuição de processos eletrônicos dentro das unidades[cite: 1007, 1008, 1009, 1015].
+* [cite_start]**Assinatura eletrônica simples e avançada:** Identificam o signatário e associam dados, podendo usar certificados corporativos ou aceitos pelas partes[cite: 1150, 1151, 1152, 1156].
+* [cite_start]**Assinatura eletrônica qualificada:** Utiliza certificado digital oficial (padrão ICP-Brasil)[cite: 1154].
+
+**3. Direitos e Deveres**
+* [cite_start]É expressamente vedada a adoção de sistemas paralelos destinados ao controle e tramitação de documentos[cite: 987].
+* [cite_start]Todos os atos e documentos devem ser praticados e inseridos exclusivamente em formato digital[cite: 1027, 1070].
+* [cite_start]É dever da Administração digitalizar documentos físicos apresentados pelo cidadão e devolver os originais imediatamente mediante recibo[cite: 1036, 1073].
+* [cite_start]É responsabilidade exclusiva do usuário (interno ou externo) o sigilo da sua senha, a veracidade dos dados inseridos e a manutenção de um canal de comunicação (e-mail) atualizado[cite: 1052, 1053, 1060].
+* [cite_start]O usuário externo tem o dever de preservar os documentos físicos originais (cujas cópias foram inseridas no sistema) por, no mínimo, 5 anos após a conclusão do processo[cite: 1064].
+* [cite_start]É obrigatório o uso de assinatura digital (ICP-Brasil) para atos que envolvam autorização de despesas, classificação de sigilo ou que sejam assinados por Chefes de Poder e Secretários[cite: 1155, 1157].
+
+**4. Exceções**
+* [cite_start]**Trâmite Físico Excepcional:** A tramitação de processos físicos é vedada como regra, mas admitida em situações absolutamente excepcionais, mediante autorização prévia dos Titulares dos órgãos[cite: 1113].
+* [cite_start]**Indisponibilidade do Sistema:** Caso o sistema saia do ar e isso cause danos à celeridade ou ao interesse público, os atos podem ser praticados fisicamente, com digitalização obrigatória assim que o sistema retornar[cite: 1021].
+* [cite_start]**Inviabilidade de Digitalização:** Se um arquivo exceder o limite de tamanho do sistema ou ficar ilegível, o usuário terá 5 dias úteis para entregar o documento físico na repartição ou fornecer o arquivo em mídia removível (CD, DVD, Pendrive)[cite: 1045, 1046, 1047, 1049].
+
+**5. Sanções e Responsabilidades**
+* [cite_start]O compartilhamento ou uso indevido da senha de acesso sujeita o servidor à responsabilização administrativa[cite: 1052].
+* [cite_start]A falha na manutenção ou leitura do canal de comunicação (e-mail) por parte do usuário resultará na presunção de que as intimações foram recebidas validamente após 10 dias do envio[cite: 1105].
+* [cite_start]Os usuários que violarem a confidencialidade ou o sigilo de processos restritos responderão por quebra de responsabilidade[cite: 1161].
+* [cite_start]Protocolos que tramitarem em desconformidade com as regras do Decreto deverão ser devolvidos imediatamente à origem para correção[cite: 1169].
