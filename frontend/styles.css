@@ -57,34 +57,40 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
   padding: 2rem 1rem;
   align-items: center;
+  justify-content: center;
 }
 
 .container {
   background: var(--container-bg);
-  padding: 2.5rem;
+  padding: 3rem;
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   width: 100%;
-  max-width: 650px;
+  max-width: 1300px;
+  min-height: 85vh;
   display: flex;
   flex-direction: column;
   transition: all 0.3s ease;
   border: 1px solid var(--border-color);
 }
 
-.container.admin-panel {
-  max-width: 1100px;
+.main-layout {
+  display: flex;
+  gap: 2rem;
+  width: 100%;
+  flex: 1;
+}
+
+.left-panel, .right-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 h1, h2, h3 {
   color: var(--header-color);
   font-weight: 600;
   margin-bottom: 1.5rem;
-}
-
-h1 {
-  font-size: 1.8rem;
-  text-align: center;
 }
 
 .header-nav {
@@ -108,7 +114,7 @@ h1 {
   gap: 1rem;
 }
 
-button, .nav-button, .nav-link {
+button, .nav-button, .nav-link, .btn-download {
   font-family: 'Inter', sans-serif;
   font-weight: 500;
   border-radius: var(--radius-md);
@@ -119,21 +125,19 @@ button, .nav-button, .nav-link {
   align-items: center;
   justify-content: center;
   text-decoration: none;
+  color: white;
+  padding: 0.75rem 1.5rem;
 }
 
 button {
   background-color: var(--primary-color);
-  color: white;
-  padding: 0.75rem 1.5rem;
   font-size: 1rem;
   width: 100%;
-  max-width: 250px;
-  margin: 0 auto 1rem auto;
   box-shadow: var(--shadow-sm);
 }
 
-button:hover {
-  background-color: var(--primary-hover);
+button:hover, .btn-download:hover {
+  filter: brightness(0.9);
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
 }
@@ -146,6 +150,7 @@ button:hover {
 
 .nav-link:hover {
   background-color: rgba(99, 102, 241, 0.1);
+  color: var(--primary-color);
 }
 
 .nav-button {
@@ -155,26 +160,14 @@ button:hover {
 
 #logout-button {
   background-color: var(--danger-color);
-  color: white;
-  margin: 0;
   width: auto;
-}
-
-#logout-button:hover {
-  background-color: var(--danger-hover);
 }
 
 #settings-btn {
   background-color: var(--input-bg);
   color: var(--text-color);
   border: 1px solid var(--border-color);
-  margin: 0;
   width: auto;
-}
-
-#settings-btn:hover {
-  border-color: var(--input-border);
-  background-color: var(--border-color);
 }
 
 input[type="file"] {
@@ -183,27 +176,33 @@ input[type="file"] {
 
 .custom-file-upload {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 1rem;
   border: 2px dashed var(--input-border);
-  padding: 2rem 1.5rem;
+  padding: 2.5rem 1.5rem;
   cursor: pointer;
-  background-color: var(--input-bg);
+  background-color: transparent;
   color: var(--input-text);
   border-radius: var(--radius-md);
   transition: all 0.2s ease;
   font-weight: 500;
   text-align: center;
-  margin: 1rem auto 2rem auto;
+  margin-bottom: 1.5rem;
   width: 100%;
-  max-width: 400px;
+  flex: 1;
+}
+
+.custom-file-upload img {
+  max-width: 300px;
+  height: auto;
+  pointer-events: none;
 }
 
 .custom-file-upload:hover {
   border-color: var(--primary-color);
   background-color: rgba(99, 102, 241, 0.05);
-  color: var(--primary-color);
 }
 
 .form-group {
@@ -218,7 +217,7 @@ input[type="file"] {
   font-weight: 500;
 }
 
-.form-group input, #create-user-form input, #create-user-form select {
+.form-group input {
   width: 100%;
   padding: 0.75rem 1rem;
   border: 1px solid var(--input-border);
@@ -229,29 +228,27 @@ input[type="file"] {
   transition: all 0.2s ease;
 }
 
-.form-group input:focus, #create-user-form input:focus, td select:focus {
+.form-group input:focus {
   border-color: var(--primary-color);
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
   outline: none;
+}
+
+.hidden {
+  display: none !important;
 }
 
 .progress-container {
   background: var(--input-bg);
   padding: 1.5rem;
   border-radius: var(--radius-md);
-  margin-top: 1.5rem;
   border: 1px solid var(--border-color);
-  text-align: center;
   width: 100%;
-}
-
-.progress-container.hidden, #downloadContainer.hidden, #cancel-button.hidden, .btn-download.hidden {
-  display: none !important;
 }
 
 progress {
   width: 100%;
-  height: 8px;
+  height: 6px;
   border-radius: 4px;
   overflow: hidden;
   appearance: none;
@@ -274,26 +271,6 @@ progress::-webkit-progress-value {
   color: var(--input-text);
 }
 
-.btn-download {
-  color: white;
-  padding: 0.75rem 1.5rem;
-  border-radius: var(--radius-md);
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 500;
-  font-family: 'Inter', sans-serif;
-  transition: opacity 0.2s ease, transform 0.2s ease;
-  box-shadow: var(--shadow-sm);
-}
-
-.btn-download:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-
 section h2 {
   font-size: 1.2rem;
   border-bottom: 1px solid var(--border-color);
@@ -302,11 +279,10 @@ section h2 {
 }
 
 .table-container {
-  overflow-x: auto;
+  overflow-y: auto;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
   background-color: var(--container-bg);
-  margin-bottom: 2rem;
 }
 
 table {
@@ -336,32 +312,13 @@ tbody tr:hover {
   background-color: var(--input-bg);
 }
 
-td button, td select {
-  padding: 0.4rem 0.8rem;
-  font-size: 0.85rem;
-  margin: 0;
-  width: auto;
-}
-
-.delete-btn {
-  background-color: transparent;
-  color: var(--danger-color);
-  border: 1px solid var(--danger-color);
-  box-shadow: none;
-}
-
-.delete-btn:hover {
-  background-color: var(--danger-color);
-  color: white;
-}
-
-.download-link, .download-zip-link {
+.download-link {
   color: var(--primary-color);
   font-weight: 500;
   text-decoration: none;
 }
 
-.download-link:hover, .download-zip-link:hover {
+.download-link:hover {
   text-decoration: underline;
 }
 
@@ -454,39 +411,9 @@ input:checked + .slider:before {
   transform: translateX(22px);
 }
 
-footer {
-  margin-top: auto;
-  padding: 2rem 0 1rem 0;
-  text-align: center;
-  color: var(--footer-text);
-  font-size: 0.85rem;
-}
-
 .error-text {
   color: var(--danger-color);
   margin-top: 1rem;
   font-size: 0.9rem;
   text-align: center;
-}
-
-#create-user-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  align-items: flex-start;
-}
-
-#create-user-form h3 {
-  width: 100%;
-  margin-bottom: 0.5rem;
-}
-
-#create-user-form input, #create-user-form select {
-  flex: 1 1 200px;
-  margin: 0;
-}
-
-#create-user-form button {
-  margin: 0;
-  height: 42px;
 }

@@ -37,91 +37,105 @@ document.addEventListener('DOMContentLoaded', function() {
     })
     .then(user => {
         currentUserRole = user.role;
-        document.getElementById('welcome-message').textContent = `Bem-vindo, ${user.username}!`;
-        if (user.role === 'admin' || user.role === 'superuser') {
-            document.getElementById('admin-link').style.display = 'inline-block';
+        const welcomeMessage = document.getElementById('welcome-message');
+        if (welcomeMessage) {
+            welcomeMessage.textContent = `Bem-vindo, ${user.username}!`;
+        }
+        const adminLink = document.getElementById('admin-link');
+        if (adminLink && (user.role === 'admin' || user.role === 'superuser')) {
+            adminLink.style.display = 'inline-block';
         }
         loadUserHistory(); 
     })
     .catch((error) => {
-        console.error(error.message);
         if (window.location.pathname !== '/login') {
             window.location.href = '/login';
         }
     });
 
     const pdfInput = document.getElementById('pdfInput');
-    const fileUploadLabel = document.querySelector('.custom-file-upload');
-    const defaultLabelText = fileUploadLabel.innerHTML;
+    const fileUploadText = document.getElementById('upload-label-text');
+    if (pdfInput && fileUploadText) {
+        const defaultLabelText = fileUploadText.textContent;
+        pdfInput.addEventListener('change', function(e){
+          if(e.target.files && e.target.files.length > 0) {
+            fileUploadText.innerHTML = `<i class="fas fa-file-pdf"></i> ${e.target.files[0].name}`;
+          } else {
+            fileUploadText.textContent = defaultLabelText;
+          }
+        });
+    }
 
-    pdfInput.addEventListener('change', function(e){
-      if(e.target.files && e.target.files.length > 0) {
-        fileUploadLabel.innerHTML = `<i class="fas fa-file-pdf"></i> ${e.target.files[0].name}`;
-      } else {
-        fileUploadLabel.innerHTML = defaultLabelText;
-      }
-    });
-
-    document.getElementById('logout-button').addEventListener('click', () => {
-        localStorage.removeItem('accessToken');
-        window.location.href = '/login';
-    });
+    const logoutButton = document.getElementById('logout-button');
+    if (logoutButton) {
+        logoutButton.addEventListener('click', () => {
+            localStorage.removeItem('accessToken');
+            window.location.href = '/login';
+        });
+    }
 
     setupSettingsModal();
 
-    document.getElementById('cancel-button').addEventListener('click', async () => {
-        if (!trackingCode) return;
-        
-        const btn = document.getElementById('cancel-button');
-        btn.disabled = true;
-        btn.textContent = 'Cancelando...';
-
-        const token = localStorage.getItem('accessToken');
-        try {
-            await fetch(`/cancel-processing/${trackingCode}`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-        } catch (error) {
-            console.error('Erro ao cancelar:', error);
-            showModal("Não foi possível cancelar o processo.");
-            btn.disabled = false;
-            btn.textContent = 'Cancelar';
-        }
-    });
-
-    document.getElementById('history-table').addEventListener('click', function(e) {
-        if (e.target.classList.contains('download-link')) {
-            e.preventDefault();
-            const code = e.target.dataset.code;
-            const type = e.target.dataset.type;
+    const cancelButton = document.getElementById('cancel-button');
+    if (cancelButton) {
+        cancelButton.addEventListener('click', async () => {
+            if (!trackingCode) return;
             
-            let downloadUrl, filename;
-            
-            if (type === 'zip') {
-                downloadUrl = `/download/zip/${code}`;
-                filename = `processado_${code}.zip`;
-            } else if (type === 'word') {
-                downloadUrl = `/download/word/${code}`;
-                filename = `esboco_${code}.docx`;
-            } else {
-                downloadUrl = `/download/pdf/${code}`;
-                filename = `analise_${code}.pdf`;
+            cancelButton.disabled = true;
+            cancelButton.textContent = 'Cancelando...';
+            document.getElementById("robot-state").src = "../frontend/img/BOT_IDLE.png";
+
+            const token = localStorage.getItem('accessToken');
+            try {
+                await fetch(`/cancel-processing/${trackingCode}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+            } catch (error) {
+                showModal("Não foi possível cancelar o processo.");
+                cancelButton.disabled = false;
+                cancelButton.textContent = 'Cancelar';
             }
-            
-            handleAuthenticatedDownload(downloadUrl, filename);
-        }
-    });
+        });
+    }
+
+    const historyTable = document.getElementById('history-table');
+    if (historyTable) {
+        historyTable.addEventListener('click', function(e) {
+            if (e.target.classList.contains('download-link')) {
+                e.preventDefault();
+                const code = e.target.dataset.code;
+                const type = e.target.dataset.type;
+                
+                let downloadUrl, filename;
+                
+                if (type === 'zip') {
+                    downloadUrl = `/download/zip/${code}`;
+                    filename = `processado_${code}.zip`;
+                } else if (type === 'word') {
+                    downloadUrl = `/download/word/${code}`;
+                    filename = `esboco_${code}.docx`;
+                } else {
+                    downloadUrl = `/download/pdf/${code}`;
+                    filename = `analise_${code}.pdf`;
+                }
+                
+                handleAuthenticatedDownload(downloadUrl, filename);
+            }
+        });
+    }
 });
 
 function loadUserHistory() {
+    const tbody = document.querySelector('#history-table tbody');
+    if (!tbody) return;
+
     const token = localStorage.getItem('accessToken');
     fetch('/users/me/uploads', {
         headers: { 'Authorization': `Bearer ${token}` }
     })
     .then(response => response.ok ? response.json() : Promise.reject('Failed to load history'))
     .then(uploads => {
-        const tbody = document.querySelector('#history-table tbody');
         tbody.innerHTML = '';
         if (uploads.length === 0) {
             tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Nenhum histórico encontrado.</td></tr>';
@@ -152,8 +166,6 @@ function loadUserHistory() {
         });
     })
     .catch(error => {
-        console.error('Erro ao carregar histórico:', error);
-        const tbody = document.querySelector('#history-table tbody');
         tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Erro ao carregar o histórico.</td></tr>';
     });
 }
@@ -161,12 +173,13 @@ function loadUserHistory() {
 function setupSettingsModal() {
     const modal = document.getElementById('settings-modal');
     const btn = document.getElementById('settings-btn');
-    const span = document.getElementsByClassName('close-btn')[0];
+    const spans = document.getElementsByClassName('close-btn');
 
-    if(!modal || !btn || !span) {
-        console.error("Elementos do modal de configurações não encontrados.");
+    if(!modal || !btn || spans.length === 0) {
         return;
     }
+
+    const span = spans[0];
 
     btn.onclick = function() {
         modal.style.display = 'block';
@@ -180,48 +193,53 @@ function setupSettingsModal() {
         }
     }
 
-    document.getElementById('password-change-form').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const currentPassword = document.getElementById('current-password').value;
-        const newPassword = document.getElementById('new-password').value;
-        const statusEl = document.getElementById('password-change-status');
-        const token = localStorage.getItem('accessToken');
+    const passwordForm = document.getElementById('password-change-form');
+    if (passwordForm) {
+        passwordForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const currentPassword = document.getElementById('current-password').value;
+            const newPassword = document.getElementById('new-password').value;
+            const statusEl = document.getElementById('password-change-status');
+            const token = localStorage.getItem('accessToken');
 
-        statusEl.textContent = 'A guardar...';
-        statusEl.style.color = 'gray';
+            statusEl.textContent = 'A guardar...';
+            statusEl.style.color = 'gray';
 
-        try {
-            const response = await fetch('/users/me/password', {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    current_password: currentPassword,
-                    new_password: newPassword
-                })
-            });
+            try {
+                const response = await fetch('/users/me/password', {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        current_password: currentPassword,
+                        new_password: newPassword
+                    })
+                });
 
-            if (response.status === 204) {
-                statusEl.textContent = 'Palavra-passe alterada com sucesso!';
-                statusEl.style.color = 'green';
-                e.target.reset();
-            } else {
-                const errorData = await response.json();
-                throw new Error(errorData.detail || 'Falha ao alterar a palavra-passe.');
+                if (response.status === 204) {
+                    statusEl.textContent = 'Palavra-passe alterada com sucesso!';
+                    statusEl.style.color = 'green';
+                    e.target.reset();
+                } else {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Falha ao alterar a palavra-passe.');
+                }
+            } catch (error) {
+                statusEl.textContent = `Erro: ${error.message}`;
+                statusEl.style.color = 'red';
             }
-        } catch (error) {
-            statusEl.textContent = `Erro: ${error.message}`;
-            statusEl.style.color = 'red';
-        }
-    });
+        });
+    }
 
     const darkModeToggle = document.getElementById('dark-mode-toggle');
-    darkModeToggle.addEventListener('change', function() {
-        document.body.classList.toggle('dark-mode');
-        localStorage.setItem('darkMode', this.checked);
-    });
+    if (darkModeToggle) {
+        darkModeToggle.addEventListener('change', function() {
+            document.body.classList.toggle('dark-mode');
+            localStorage.setItem('darkMode', this.checked);
+        });
+    }
 }
 
 function initializeDarkMode() {
@@ -258,7 +276,6 @@ async function handleAuthenticatedDownload(url, filename) {
         window.URL.revokeObjectURL(downloadUrl);
         a.remove();
     } catch (error) {
-        console.error('Erro no download:', error);
         showModal(`Falha no download: ${error.message}`);
     }
 }
@@ -273,19 +290,25 @@ async function uploadPDF() {
   }
 
   const pdfInput = document.getElementById("pdfInput");
-  if (!pdfInput.files.length) {
+  if (!pdfInput || !pdfInput.files.length) {
     showModal("Selecione um arquivo PDF");
     return;
   }
 
+  document.getElementById("robot-state").src = "../frontend/img/BOT_LOADING.png";
+
   const formData = new FormData();
   formData.append("file", pdfInput.files[0]);
 
-  document.getElementById("progressSection").classList.remove("hidden");
-  document.getElementById("cancel-button").classList.remove("hidden");
-  document.getElementById("downloadContainer").classList.add("hidden");
-  document.getElementById("statusText").textContent = "Enviando...";
-  document.getElementById("progressBar").value = 5;
+  const cancelBtn = document.getElementById("cancel-button");
+  const downloadContainer = document.getElementById("downloadContainer");
+  const statusText = document.getElementById("statusText");
+  const progressBar = document.getElementById("progressBar");
+
+  if(cancelBtn) cancelBtn.classList.remove("hidden");
+  if(downloadContainer) downloadContainer.classList.add("hidden");
+  if(statusText) statusText.textContent = "Enviando...";
+  if(progressBar) progressBar.value = 5;
 
   try {
     const response = await fetch("/process-pdf", {
@@ -302,9 +325,9 @@ async function uploadPDF() {
     loadUserHistory(); 
     checkStatusLoop(trackingCode);
   } catch (error) {
-    console.error('Erro ao enviar o PDF:', error);
-    document.getElementById("statusText").textContent = "Erro ao enviar o arquivo.";
-    document.getElementById("cancel-button").classList.add("hidden");
+    document.getElementById("robot-state").src = "../frontend/img/BOT_SAD.png";
+    if(statusText) statusText.textContent = "Erro ao enviar o arquivo.";
+    if(cancelBtn) cancelBtn.classList.add("hidden");
     showModal(`Erro ao enviar o arquivo: ${error.message}`);
     clearInterval(statusInterval);
   }
@@ -325,41 +348,60 @@ function checkStatusLoop(code) {
 
       const status = data.status;
       const statusInfo = statusMap[status] || { value: 0, text: "Status desconhecido" };
-      document.getElementById("statusText").textContent = statusInfo.text;
-      document.getElementById("progressBar").value = statusInfo.value;
+      
+      const statusText = document.getElementById("statusText");
+      const progressBar = document.getElementById("progressBar");
+      
+      if(statusText) statusText.textContent = statusInfo.text;
+      if(progressBar) progressBar.value = statusInfo.value;
 
       if (status === "finished" || status === "error" || status === "cancelled") {
         clearInterval(statusInterval);
-        document.getElementById("cancel-button").classList.add("hidden");
-        document.getElementById('cancel-button').disabled = false;
-        document.getElementById('cancel-button').textContent = 'Cancelar';
+        
+        const cancelButton = document.getElementById("cancel-button");
+        if(cancelButton) {
+            cancelButton.classList.add("hidden");
+            cancelButton.disabled = false;
+            cancelButton.textContent = 'Cancelar';
+        }
 
         if (status === "finished") {
+            document.getElementById("robot-state").src = "../frontend/img/BOT_IDLE.png";
             const pdfLink = document.getElementById("downloadPdfLink");
             const wordLink = document.getElementById("downloadWordLink");
             const zipLink = document.getElementById("downloadZipLink");
+            const downloadContainer = document.getElementById("downloadContainer");
             
-            pdfLink.onclick = (e) => { e.preventDefault(); handleAuthenticatedDownload(`/download/pdf/${code}`, `analise_${code}.pdf`); };
-            wordLink.onclick = (e) => { e.preventDefault(); handleAuthenticatedDownload(`/download/word/${code}`, `esboco_${code}.docx`); };
+            if(pdfLink) pdfLink.onclick = (e) => { e.preventDefault(); handleAuthenticatedDownload(`/download/pdf/${code}`, `analise_${code}.pdf`); };
+            if(wordLink) wordLink.onclick = (e) => { e.preventDefault(); handleAuthenticatedDownload(`/download/word/${code}`, `esboco_${code}.docx`); };
 
-            document.getElementById("downloadContainer").classList.remove("hidden");
+            if(downloadContainer) downloadContainer.classList.remove("hidden");
 
-            if (currentUserRole === 'admin' || currentUserRole === 'superuser') {
-                zipLink.classList.remove("hidden");
-                zipLink.onclick = (e) => { e.preventDefault(); handleAuthenticatedDownload(`/download/zip/${code}`, `processado_${code}.zip`); };
-            } else {
-                zipLink.classList.add("hidden");
+            if (zipLink) {
+                if (currentUserRole === 'admin' || currentUserRole === 'superuser') {
+                    zipLink.classList.remove("hidden");
+                    zipLink.onclick = (e) => { e.preventDefault(); handleAuthenticatedDownload(`/download/zip/${code}`, `processado_${code}.zip`); };
+                } else {
+                    zipLink.classList.add("hidden");
+                }
             }
         }
         
         if (status === "error") {
+            document.getElementById("robot-state").src = "../frontend/img/BOT_SAD.png";
             showModal("Ocorreu um erro durante o processamento do arquivo.");
         }
+
+        if (status === "cancelled") {
+            document.getElementById("robot-state").src = "../frontend/img/BOT_IDLE.png";
+        }
+        
         loadUserHistory(); 
       }
     } catch(error) {
-      console.error('Erro ao consultar status:', error);
-      document.getElementById("statusText").textContent = "Erro ao consultar status.";
+      document.getElementById("robot-state").src = "../frontend/img/BOT_SAD.png";
+      const statusText = document.getElementById("statusText");
+      if(statusText) statusText.textContent = "Erro ao consultar status.";
       showModal(`Erro ao consultar status: ${error.message}`);
       clearInterval(statusInterval);
     }
@@ -395,7 +437,7 @@ function showModal(message) {
     const closeButton = document.createElement('button');
     closeButton.textContent = 'OK';
     closeButton.style.padding = '10px 25px';
-    closeButton.style.backgroundImage = 'linear-gradient(to right, #667eea 0%, #764ba2 51%, #667eea 100%)';
+    closeButton.style.backgroundImage = 'linear-gradient(to right, #6366f1 0%, #4f46e5 51%, #6366f1 100%)';
     closeButton.style.backgroundSize = '200% auto';
     closeButton.style.color = 'white';
     closeButton.style.border = 'none';

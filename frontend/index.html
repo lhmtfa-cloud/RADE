@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>REDE</title>
-  <link rel="stylesheet" href="/static/styles.css" />
+  <link rel="stylesheet" href="/static/styles.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
 <body>
@@ -27,54 +27,55 @@
       </div>
     </div>
     
-    <div style="text-align: center; margin-bottom: 1.5rem;">
-        <h1>Processador de PDFs</h1>
-        <p style="color: var(--input-text); font-size: 0.95rem;">Faça o upload do seu documento para iniciar o processamento.</p>
-    </div>
+    <div class="main-layout">
+      <div class="left-panel">
+        <input type="file" id="pdfInput" accept="application/pdf">
+        <label for="pdfInput" class="custom-file-upload">
+          <img id="robot-state" src="../frontend/img/BOT_IDLE.png" alt="Robô de Status">
+          <span id="upload-label-text">Faça upload do seu documento para iniciar o processamento.</span>
+        </label>
 
-    <input type="file" id="pdfInput" accept="application/pdf" />
-    <label for="pdfInput" class="custom-file-upload">
-      <i class="fas fa-cloud-upload-alt fa-2x"></i> 
-      <span>Escolher Arquivo PDF</span>
-    </label>
+        <button onclick="uploadPDF()" id="process-btn">Processar Arquivo</button>
+        <button id="cancel-button" class="hidden" style="background-color: var(--danger-color); margin-top: 0.5rem;">Cancelar Processamento</button>
 
-    <button onclick="uploadPDF()">Processar Arquivo</button>
-    <button id="cancel-button" class="hidden" style="background-color: var(--danger-color); margin-top: 0.5rem;">Cancelar Processamento</button>
-
-    <div class="progress-container hidden" id="progressSection">
-      <h3 style="font-size: 1rem; margin-bottom: 10px;">Status de Processamento</h3>
-      <progress id="progressBar" value="0" max="100"></progress>
-      <div id="statusText">Aguardando...</div>
-    </div>
-
-    <div id="downloadContainer" class="hidden" style="display: flex; gap: 10px; justify-content: center; margin-top: 2rem; flex-wrap: wrap;">
-      <a id="downloadPdfLink" href="#" class="btn-download" style="background-color: var(--success-color);">
-          <i class="fas fa-file-pdf"></i> Análise (PDF)
-      </a>
-      <a id="downloadWordLink" href="#" class="btn-download" style="background-color: #2563eb;">
-          <i class="fas fa-file-word"></i> Esboço (Word)
-      </a>
-      <a id="downloadZipLink" href="#" class="btn-download hidden" style="background-color: #4b5563;">
-          <i class="fas fa-file-archive"></i> Tudo (ZIP)
-      </a>
-    </div>
-
-    <section id="history-section" style="margin-top: 3rem; width: 100%;">
-        <h2><i class="fas fa-history" style="margin-right: 8px;"></i> Meu Histórico</h2>
-        <div class="table-container" style="max-height: 350px;">
-            <table id="history-table">
-                <thead>
-                    <tr>
-                        <th>Arquivo</th>
-                        <th>Data</th>
-                        <th>Status</th>
-                        <th>Ação</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
+        <div id="downloadContainer" class="hidden" style="display: flex; gap: 10px; justify-content: center; margin-top: 1rem; flex-wrap: wrap;">
+          <a id="downloadPdfLink" href="#" class="btn-download" style="background-color: var(--success-color);">
+              <i class="fas fa-file-pdf"></i> Análise (PDF)
+          </a>
+          <a id="downloadWordLink" href="#" class="btn-download" style="background-color: #2563eb;">
+              <i class="fas fa-file-word"></i> Esboço (Word)
+          </a>
+          <a id="downloadZipLink" href="#" class="btn-download hidden" style="background-color: #4b5563;">
+              <i class="fas fa-file-archive"></i> Tudo (ZIP)
+          </a>
         </div>
-    </section>
+      </div>
+
+      <div class="right-panel">
+        <div class="progress-container" id="progressSection">
+          <h3 style="font-size: 1rem; margin-bottom: 10px;">Status de Processamento</h3>
+          <progress id="progressBar" value="0" max="100"></progress>
+          <div id="statusText">Aguardando...</div>
+        </div>
+
+        <section id="history-section" style="margin-top: 1.5rem; width: 100%;">
+            <h2 style="font-size: 1rem; margin-bottom: 10px;"><i class="fas fa-history" style="margin-right: 8px;"></i> Meu Histórico</h2>
+            <div class="table-container" style="max-height: 250px;">
+                <table id="history-table">
+                    <thead>
+                        <tr>
+                            <th>Arquivo</th>
+                            <th>Data</th>
+                            <th>Status</th>
+                            <th>Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
+      </div>
+    </div>
   </div>
 
   <div id="settings-modal">
@@ -106,10 +107,6 @@
     </div>
   </div>
 
-  <footer>
-        <p>Feito por Rafael</p>
-  </footer>
-  
   <script src="/static/REDE.js"></script>
 </body>
 </html>
