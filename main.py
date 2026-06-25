@@ -125,16 +125,25 @@ async def login(username: str = Form(...), password: str = Form(...)):
         "iv": iv_hex
     }).encode('utf-8')
 
-    req = urllib.request.Request('http://host.docker.internal:8081/autenticar.php', data=payload_envio, headers={'Content-Type': 'application/json'})
-
     proxy_handler = urllib.request.ProxyHandler({})
     opener = urllib.request.build_opener(proxy_handler)
 
+    url_php = 'http://10.11.15.4:8081/autenticar.php'
+    
     try:
+        req = urllib.request.Request(url_php, data=payload_envio, headers={'Content-Type': 'application/json'})
         with opener.open(req) as response:
             resposta_da_api = json.loads(response.read().decode('utf-8'))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail="Erro de comunicação com o servidor de autenticação central")
+    except Exception as e1:
+        print(f"[DEBUG REDE] Falha na URL principal ({url_php}): {str(e1)}", file=sys.stderr, flush=True)
+        url_php_fallback = 'http://172.17.0.1:8081/autenticar.php'
+        try:
+            req = urllib.request.Request(url_php_fallback, data=payload_envio, headers={'Content-Type': 'application/json'})
+            with opener.open(req) as response:
+                resposta_da_api = json.loads(response.read().decode('utf-8'))
+        except Exception as e2:
+            print(f"[DEBUG REDE] Falha na URL fallback ({url_php_fallback}): {str(e2)}", file=sys.stderr, flush=True)
+            raise HTTPException(status_code=500, detail="Erro de comunicação com o servidor de autenticação central")
 
     if resposta_da_api.get('sucesso'):
         if user:

@@ -85,6 +85,7 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-width: 0; /* MÁGICA AQUI: Impede que a tabela expanda o flex e empurre o outro lado */
 }
 
 h1, h2, h3 {
@@ -283,6 +284,7 @@ section h2 {
   border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
   background-color: var(--container-bg);
+  width: 100%;
 }
 
 table {
@@ -302,6 +304,17 @@ th {
   font-weight: 600;
   color: var(--input-text);
   white-space: nowrap;
+}
+
+/* Regra específica APENAS para a coluna do nome do arquivo */
+td:first-child {
+  max-width: 250px; /* Cria um teto para o tamanho. Se passar, ele é forçado a quebrar */
+  word-break: break-all; /* Força hashes longos a quebrarem no meio da palavra */
+}
+
+/* Regra para as colunas de Data, Status e Ação */
+td:not(:first-child) {
+  white-space: nowrap; /* Garante que essas colunas fiquem perfeitinhas em 1 linha */
 }
 
 tbody tr:last-child td {
